@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum DivisionGender {
+  MENS
+  WOMENS
+}
+
+enum GameStage {
+  POOL
+  PREQUARTER
+  QUARTER
+  SEMI
+  FINAL
+  OTHER
+}
+
+enum GameStatus {
+  SCHEDULED
+  FINAL
+}
+
+enum PickKind {
+  REGULAR
+  BONUS
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  entries       Entry[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Event {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  name            String
+  startsAt        DateTime?
+  entryLockAt     DateTime?
+  picksVisibleAt  DateTime?
+  isLocked        Boolean         @default(false)
+  scoringComplete Boolean         @default(false)
+  divisions       Division[]
+  teams           Team[]
+  games           Game[]
+  entries         Entry[]
+  bonusQuestions  BonusQuestion[]
+  teamScores      TeamScore[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Division {
+  id        String         @id @default(cuid())
+  eventId   String
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name      String
+  gender    DivisionGender
+  sortOrder Int            @default(0)
+  usauUrl   String?
+  teams     Team[]
+  games     Game[]
+
+  @@unique([eventId, gender])
+}
+
+model Team {
+  id         String      @id @default(cuid())
+  eventId    String
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  divisionId String
+  division   Division    @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  name       String
+  seed       Int
+  bucket     Int
+  pool       String?
+  poolRank   Int?
+  region     String?
+  picks      EntryPick[]
+  team1Games Game[]      @relation("Team1Games")
+  team2Games Game[]      @relation("Team2Games")
+  scores     TeamScore[]
+
+  @@unique([eventId, divisionId, seed])
+  @@unique([eventId, divisionId, name])
+}
+
+model Game {
+  id               String     @id @default(cuid())
+  eventId          String
+  event            Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  divisionId       String
+  division         Division   @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  stage            GameStage
+  label            String?
+  pool             String?
+  championshipPath Boolean    @default(true)
+  startsAt         DateTime?
+  field            String?
+  team1Id          String?
+  team1            Team?      @relation("Team1Games", fields: [team1Id], references: [id], onDelete: SetNull)
+  team2Id          String?
+  team2            Team?      @relation("Team2Games", fields: [team2Id], references: [id], onDelete: SetNull)
+  team1Score       Int?
+  team2Score       Int?
+  status           GameStatus @default(SCHEDULED)
+  sortOrder        Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model Entry {
+  id                  String        @id @default(cuid())
+  eventId             String
+  event               Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName         String
+  submittedAt         DateTime      @default(now())
+  picks               EntryPick[]
+  bonusAnswers        BonusAnswer[]
+  score               EntryScore?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@unique([eventId, userId])
+}
+
+model EntryPick {
+  id        String   @id @default(cuid())
+  entryId   String
+  entry     Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  kind      PickKind
+  slot      String
+  createdAt DateTime @default(now())
+
+  @@unique([entryId, slot])
+  @@unique([entryId, teamId])
+}
+
+model BonusQuestion {
+  id        String        @id @default(cuid())
+  eventId   String
+  event     Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  prompt    String
+  points    Int
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  options   BonusOption[]
+  answers   BonusAnswer[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model BonusOption {
+  id         String        @id @default(cuid())
+  questionId String
+  question   BonusQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  label      String
+  sortOrder  Int           @default(0)
+  isCorrect  Boolean       @default(false)
+  answers    BonusAnswer[]
+}
+
+model BonusAnswer {
+  id         String        @id @default(cuid())
+  entryId    String
+  entry      Entry         @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  questionId String
+  question   BonusQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionId   String
+  option     BonusOption   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, questionId])
+}
+
+model TeamScore {
+  id              String   @id @default(cuid())
+  eventId         String
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teamId          String
+  team            Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  poolWins        Int      @default(0)
+  poolWinner      Boolean  @default(false)
+  prequarterWins  Int      @default(0)
+  quarterWins     Int      @default(0)
+  semiWins        Int      @default(0)
+  finalWins       Int      @default(0)
+  basePoints      Float    @default(0)
+  updatedAt       DateTime @updatedAt
+
+  @@unique([eventId, teamId])
+}
+
+model EntryScore {
+  id                  String   @id @default(cuid())
+  entryId             String   @unique
+  entry               Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  teamPoints          Float    @default(0)
+  bonusQuestionPoints Float    @default(0)
+  totalPoints         Float    @default(0)
+  updatedAt           DateTime @updatedAt
+}

@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f4ed;
+  --foreground: #16181d;
+  --muted: #6b7280;
+  --line: #d7d0c2;
+  --panel: #fffaf1;
+  --panel-strong: #ffffff;
+  --accent: #0b6b67;
+  --accent-strong: #084f4c;
+  --danger: #b42318;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+.focus-ring:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
