@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { Card, PageShell, Select, SubmitButton, TextInput } from "@/components/ui";
 import { SiteNav } from "@/components/site-nav";
+import { TeamPicker } from "@/components/team-picker";
 import { getPrisma } from "@/lib/prisma";
 import { entryIsLocked } from "@/lib/events";
 import { saveEntryAction } from "@/lib/entry-actions";
@@ -46,9 +47,6 @@ export default async function EntryPage({
   const answerByQuestion = new Map(entry?.bonusAnswers.map((answer) => [answer.questionId, answer.optionId]) ?? []);
   const action = saveEntryAction.bind(null, slug);
 
-  const teamsForBucket = (bucket: number | "ANY") =>
-    event.teams.filter((team) => bucket === "ANY" || team.bucket === bucket);
-
   return (
     <PageShell>
       <SiteNav />
@@ -67,11 +65,47 @@ export default async function EntryPage({
             <TextInput name="displayName" defaultValue={entry?.displayName ?? session.user.name ?? ""} required disabled={locked} />
           </label>
 
-          <PickSelect label="Bucket 1 regular pick" name="B1" teams={teamsForBucket(1)} value={pickBySlot.get("B1")} disabled={locked} />
-          <PickSelect label="Bucket 2 regular pick" name="B2A" teams={teamsForBucket(2)} value={pickBySlot.get("B2A")} disabled={locked} />
-          <PickSelect label="Bucket 2 regular pick" name="B2B" teams={teamsForBucket(2)} value={pickBySlot.get("B2B")} disabled={locked} />
-          <PickSelect label="Bucket 3 regular pick" name="B3" teams={teamsForBucket(3)} value={pickBySlot.get("B3")} disabled={locked} />
-          <PickSelect label="Designated bonus team" name="BONUS" teams={teamsForBucket("ANY")} value={pickBySlot.get("BONUS")} disabled={locked} />
+          <TeamPicker
+            disabled={locked}
+            teams={event.teams}
+            slots={[
+              {
+                name: "B1",
+                label: "Bucket 1 regular pick",
+                helper: "Seeds 1-5. Pick one team.",
+                bucket: 1,
+                value: pickBySlot.get("B1"),
+              },
+              {
+                name: "B2A",
+                label: "Bucket 2 regular pick",
+                helper: "Seeds 6-12. Pick the first of two teams.",
+                bucket: 2,
+                value: pickBySlot.get("B2A"),
+              },
+              {
+                name: "B2B",
+                label: "Bucket 2 regular pick",
+                helper: "Seeds 6-12. Pick the second of two teams.",
+                bucket: 2,
+                value: pickBySlot.get("B2B"),
+              },
+              {
+                name: "B3",
+                label: "Bucket 3 regular pick",
+                helper: "Seeds 13-20. Pick one team.",
+                bucket: 3,
+                value: pickBySlot.get("B3"),
+              },
+              {
+                name: "BONUS",
+                label: "Designated bonus team",
+                helper: "Any bucket, no duplicate teams.",
+                bucket: "ANY",
+                value: pickBySlot.get("BONUS"),
+              },
+            ]}
+          />
         </Card>
 
         <Card className="space-y-4">
@@ -100,33 +134,5 @@ export default async function EntryPage({
         </Card>
       </form>
     </PageShell>
-  );
-}
-
-function PickSelect({
-  label,
-  name,
-  teams,
-  value,
-  disabled,
-}: {
-  label: string;
-  name: string;
-  teams: Array<{ id: string; name: string; seed: number; bucket: number; division: { gender: string } }>;
-  value?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <label className="block text-sm font-semibold">
-      {label}
-      <Select name={name} defaultValue={value ?? ""} required disabled={disabled} className="mt-1">
-        <option value="">Choose a team</option>
-        {teams.map((team) => (
-          <option key={team.id} value={team.id}>
-            {team.seed}. {team.name} ({team.division.gender === "MENS" ? "M" : "W"}, B{team.bucket})
-          </option>
-        ))}
-      </Select>
-    </label>
   );
 }

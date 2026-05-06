@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/authz";
 import { getPrisma } from "@/lib/prisma";
-import { importDraftSchema } from "@/lib/usau-import";
+import { importDraftSchema, makeSourceGameKey } from "@/lib/usau-import";
 import { bucketForSeed } from "@/lib/rules";
 import { recalculateEventScores } from "@/lib/score-service";
+import { mapTeamsByName, normalizeName } from "@/lib/result-import";
 
 const eventSettingsSchema = z.object({
   eventId: z.string().min(1),
@@ -83,30 +84,68 @@ export async function saveImportDraftAction(formData: FormData) {
     teamByName.set(team.name, saved.id);
   }
 
-  await prisma.game.deleteMany({ where: { eventId, divisionId: division.id } });
+  const existingGames = await prisma.game.findMany({
+    where: { eventId, divisionId: division.id },
+    include: { team1: true, team2: true },
+  });
+  const existingByKey = indexExistingGames(existingGames);
+
   for (const game of draft.games) {
-    await prisma.game.create({
-      data: {
-        eventId,
-        divisionId: division.id,
-        stage: game.stage,
-        label: game.label,
-        pool: game.pool,
-        championshipPath: game.championshipPath,
-        team1Id: game.team1Name ? teamByName.get(game.team1Name) : undefined,
-        team2Id: game.team2Name ? teamByName.get(game.team2Name) : undefined,
-        team1Score: game.team1Score,
-        team2Score: game.team2Score,
-        status: game.status,
-        sortOrder: game.sortOrder,
-      },
+    const importedData = {
+      eventId,
+      divisionId: division.id,
+      stage: game.stage,
+      label: game.label,
+      pool: game.pool,
+      championshipPath: game.championshipPath,
+      sourceUrl: draft.sourceUrl,
+      sourceGameKey: game.sourceGameKey,
+      lastImportedAt: new Date(),
+      resultSource: "IMPORTED" as const,
+      manualOverride: false,
+      team1Id: game.team1Name ? teamByName.get(game.team1Name) : undefined,
+      team2Id: game.team2Name ? teamByName.get(game.team2Name) : undefined,
+      team1Score: game.team1Score,
+      team2Score: game.team2Score,
+      status: game.status,
+    };
+    const fallbackSourceGameKey = makeSourceGameKey({
+      stage: game.stage,
+      pool: game.pool,
+      team1Name: game.team1Name,
+      team2Name: game.team2Name,
+      sortOrder: game.sortOrder,
     });
+    const existing = existingByKey.get(game.sourceGameKey) ?? existingByKey.get(fallbackSourceGameKey);
+    if (existing?.manualOverride) continue;
+
+    if (existing) {
+      await prisma.game.update({
+        where: { id: existing.id },
+        data: importedData,
+      });
+    } else {
+      await prisma.game.create({
+        data: {
+          ...importedData,
+          sortOrder: game.sortOrder,
+        },
+      });
+    }
   }
 
   await recalculateEventScores(eventId);
   revalidatePath("/admin/import");
   revalidatePath("/admin/teams");
   revalidatePath("/admin/games");
+
+  return {
+    ok: true,
+    divisionName: division.name,
+    teamCount: draft.teams.length,
+    gameCount: draft.games.length,
+    sourceUrl: draft.sourceUrl ?? null,
+  };
 }
 
 const teamSchema = z.object({
@@ -155,6 +194,30 @@ export async function saveGameResultAction(formData: FormData) {
       team1Score: hasScore ? Number(team1ScoreRaw) : null,
       team2Score: hasScore ? Number(team2ScoreRaw) : null,
       status: hasScore ? "FINAL" : "SCHEDULED",
+      resultSource: "MANUAL",
+      manualOverride: true,
+    },
+  });
+
+  await recalculateEventScores(eventId);
+  revalidatePath("/admin/games");
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+export async function clearGameResultAction(formData: FormData) {
+  await requireAdmin();
+  const gameId = String(formData.get("gameId") ?? "");
+  const eventId = String(formData.get("eventId") ?? "");
+
+  await getPrisma().game.update({
+    where: { id: gameId },
+    data: {
+      team1Score: null,
+      team2Score: null,
+      status: "SCHEDULED",
+      resultSource: "MANUAL",
+      manualOverride: true,
     },
   });
 
@@ -193,11 +256,108 @@ export async function createGameAction(formData: FormData) {
       team1Id: input.team1Id || null,
       team2Id: input.team2Id || null,
       championshipPath: input.championshipPath ?? false,
+      resultSource: "MANUAL",
+      manualOverride: true,
       sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
     },
   });
 
   revalidatePath("/admin/games");
+}
+
+export async function applyResultsImportAction(formData: FormData) {
+  await requireAdmin();
+  const eventId = String(formData.get("eventId") ?? "");
+  const divisionId = String(formData.get("divisionId") ?? "");
+  const rawDraft = String(formData.get("draft") ?? "");
+  const overwriteManual = formData.get("overwriteManual") === "true";
+  const draft = importDraftSchema.parse(JSON.parse(rawDraft));
+  const prisma = getPrisma();
+
+  const [teams, existingGames] = await Promise.all([
+    prisma.team.findMany({ where: { eventId, divisionId } }),
+    prisma.game.findMany({
+      where: { eventId, divisionId },
+      include: { team1: true, team2: true },
+    }),
+  ]);
+  const teamByName = mapTeamsByName(teams);
+  const existingByKey = indexExistingGames(existingGames);
+  const summary = {
+    created: 0,
+    updated: 0,
+    skippedManual: 0,
+    skippedUnmatched: 0,
+    scheduledOnly: 0,
+  };
+
+  for (const game of draft.games) {
+    const team1 = game.team1Name ? teamByName.get(normalizeName(game.team1Name)) : null;
+    const team2 = game.team2Name ? teamByName.get(normalizeName(game.team2Name)) : null;
+    if (!team1 || !team2) {
+      summary.skippedUnmatched += 1;
+      continue;
+    }
+    if (game.status !== "FINAL") {
+      summary.scheduledOnly += 1;
+    }
+
+    const fallbackSourceGameKey = makeSourceGameKey({
+      stage: game.stage,
+      pool: game.pool,
+      team1Name: game.team1Name,
+      team2Name: game.team2Name,
+      sortOrder: game.sortOrder,
+    });
+    const existing = existingByKey.get(game.sourceGameKey) ?? existingByKey.get(fallbackSourceGameKey);
+    const importedData = {
+      stage: game.stage,
+      label: game.label,
+      pool: game.pool,
+      championshipPath: game.championshipPath,
+      team1Id: team1.id,
+      team2Id: team2.id,
+      team1Score: game.team1Score ?? null,
+      team2Score: game.team2Score ?? null,
+      status: game.status,
+      sourceUrl: draft.sourceUrl,
+      sourceGameKey: game.sourceGameKey,
+      lastImportedAt: new Date(),
+      resultSource: "IMPORTED" as const,
+      manualOverride: false,
+    };
+
+    if (!existing) {
+      await prisma.game.create({
+        data: {
+          eventId,
+          divisionId,
+          ...importedData,
+          sortOrder: game.sortOrder,
+        },
+      });
+      summary.created += 1;
+      continue;
+    }
+
+    if (existing.manualOverride && !overwriteManual) {
+      summary.skippedManual += 1;
+      continue;
+    }
+
+    await prisma.game.update({
+      where: { id: existing.id },
+      data: importedData,
+    });
+    summary.updated += 1;
+  }
+
+  await recalculateEventScores(eventId);
+  revalidatePath("/admin/games");
+  revalidatePath("/admin");
+  revalidatePath("/");
+
+  return summary;
 }
 
 export async function createBonusQuestionAction(formData: FormData) {
@@ -247,4 +407,33 @@ export async function setCorrectBonusOptionAction(formData: FormData) {
   await recalculateEventScores(eventId);
   revalidatePath("/admin/bonus");
   revalidatePath("/");
+}
+
+function indexExistingGames<
+  T extends {
+    sourceGameKey: string | null;
+    stage: string;
+    pool: string | null;
+    team1?: { name: string } | null;
+    team2?: { name: string } | null;
+  },
+>(games: T[]) {
+  const buckets = new Map<string, T[]>();
+  for (const game of games) {
+    const fallbackKey = makeSourceGameKey({
+      stage: game.stage,
+      pool: game.pool ?? undefined,
+      team1Name: game.team1?.name,
+      team2Name: game.team2?.name,
+    });
+    for (const key of new Set([game.sourceGameKey, fallbackKey].filter(Boolean) as string[])) {
+      buckets.set(key, [...(buckets.get(key) ?? []), game]);
+    }
+  }
+
+  const index = new Map<string, T>();
+  for (const [key, matches] of buckets) {
+    if (matches.length === 1) index.set(key, matches[0]);
+  }
+  return index;
 }

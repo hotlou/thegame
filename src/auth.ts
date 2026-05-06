@@ -38,8 +38,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, user }) {
       if (session.user) {
+        const email = session.user.email?.toLowerCase();
+        const role = email && adminEmails.has(email) ? "ADMIN" : ((user as { role?: Role }).role ?? "USER");
         session.user.id = user.id;
-        session.user.role = ((user as { role?: Role }).role ?? "USER") as Role;
+        session.user.role = role as Role;
+
+        if (role === "ADMIN" && (user as { role?: Role }).role !== "ADMIN") {
+          await getPrisma().user.update({
+            where: { id: user.id },
+            data: { role: "ADMIN" },
+          });
+        }
       }
       return session;
     },

@@ -36,6 +36,11 @@ enum PickKind {
   BONUS
 }
 
+enum ResultSource {
+  IMPORTED
+  MANUAL
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -156,9 +161,16 @@ model Game {
   team1Score       Int?
   team2Score       Int?
   status           GameStatus @default(SCHEDULED)
+  resultSource     ResultSource @default(IMPORTED)
+  manualOverride   Boolean    @default(false)
+  sourceUrl        String?
+  sourceGameKey    String?
+  lastImportedAt   DateTime?
   sortOrder        Int        @default(0)
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+
+  @@index([eventId, divisionId, sourceGameKey])
 }
 
 model Entry {

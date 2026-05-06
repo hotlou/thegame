@@ -11,6 +11,30 @@ describe("USAU import parser", () => {
     expect(draft.gender).toBe("WOMENS");
     expect(draft.teams).toHaveLength(2);
     expect(draft.teams[0]).toMatchObject({ name: "Pleiades", seed: 1, bucket: 1, pool: "A" });
-    expect(draft.games.length).toBeGreaterThanOrEqual(1);
+    expect(draft.games).toHaveLength(3);
+    expect(draft.games[0]).toMatchObject({
+      stage: "POOL",
+      label: "Pool A",
+      sourceGameKey: "usau:1001",
+      team1Name: "Pleiades",
+      team2Name: "Fugue",
+      team1Score: 15,
+      team2Score: 9,
+      status: "FINAL",
+      championshipPath: true,
+    });
+    expect(draft.games[1]).toMatchObject({
+      stage: "QUARTER",
+      sourceGameKey: "usau:2001",
+      team1Score: 15,
+      team2Score: 11,
+      championshipPath: true,
+    });
+    expect(draft.games[2]).toMatchObject({
+      stage: "FINAL",
+      sourceGameKey: "usau:2002",
+      label: "13th Place - Final",
+      championshipPath: false,
+    });
   });
 });
