@@ -46,7 +46,9 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
   const selectedDivision = divisions.find((division) => division.id === selectedDivisionId);
   const selectedUrl = selectedDivisionId ? urls[selectedDivisionId] ?? "" : "";
   const finalImportCount = payload
-    ? (payload.preview.counts.NEW_GAME ?? 0) + (payload.preview.counts.UPDATE_RESULT ?? 0) + (payload.preview.counts.MANUAL_CONFLICT ?? 0)
+    ? (payload.preview.counts.NEW_GAME ?? 0) +
+      (payload.preview.counts.UPDATE_RESULT ?? 0) +
+      (payload.preview.counts.MANUAL_CONFLICT ?? 0)
     : 0;
 
   function preview() {
@@ -69,9 +71,15 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-[0.5fr_1fr_auto]">
-        <label className="block text-sm font-semibold">
+    <div style={{ display: "grid", gap: 16 }}>
+      <div
+        style={{
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "minmax(180px, 0.5fr) minmax(0, 1fr) auto",
+        }}
+      >
+        <label className="tg-label">
           Division
           <select
             value={selectedDivisionId}
@@ -79,7 +87,8 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
               setSelectedDivisionId(event.target.value);
               setPayload(null);
             }}
-            className="focus-ring mt-1 min-h-10 w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm"
+            className="tg-input tg-select"
+            style={{ marginTop: 6 }}
           >
             {divisions.map((division) => (
               <option key={division.id} value={division.id}>
@@ -88,7 +97,7 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
             ))}
           </select>
         </label>
-        <label className="block text-sm font-semibold">
+        <label className="tg-label">
           USAU results URL
           <TextInput
             value={selectedUrl}
@@ -97,15 +106,15 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
               setPayload(null);
             }}
             placeholder="https://play.usaultimate.org/..."
-            className="mt-1"
+            style={{ marginTop: 6 }}
           />
         </label>
-        <div className="flex items-end">
+        <div style={{ display: "flex", alignItems: "flex-end" }}>
           <button
             type="button"
             onClick={preview}
             disabled={pending || !selectedDivisionId || !selectedUrl}
-            className="focus-ring min-h-10 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="tg-btn tg-btn--alt"
           >
             {pending ? "Checking..." : `Import from ${selectedDivision?.name ?? "URL"}`}
           </button>
@@ -113,19 +122,34 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
       </div>
 
       {selectedUrl && (
-        <p className="text-xs text-[var(--muted)]">
-          From <span className="font-mono">{selectedUrl}</span>
+        <p className="tg-body-sm tg-muted">
+          From <span style={{ fontFamily: "var(--font-mono)" }}>{selectedUrl}</span>
         </p>
       )}
-      {pending && <p className="text-sm font-semibold text-[var(--accent)]">Fetching USAU results and building a preview...</p>}
-      {error && <p className="text-sm font-semibold text-[var(--danger)]">{error}</p>}
+      {pending && (
+        <p className="tg-body-sm" style={{ color: "var(--accent-ink)", fontWeight: 600 }}>
+          Fetching USAU results and building a preview...
+        </p>
+      )}
+      {error && (
+        <p className="tg-body-sm" style={{ color: "var(--danger)", fontWeight: 600 }}>
+          {error}
+        </p>
+      )}
 
       {applyState.ok && (
-        <div className="rounded-lg border border-[var(--accent)] bg-white p-4 text-sm">
-          <p className="font-semibold text-[var(--accent)]">
+        <div
+          style={{
+            border: "1px solid var(--accent)",
+            borderRadius: 4,
+            background: "var(--panel-strong)",
+            padding: 14,
+          }}
+        >
+          <p className="tg-label" style={{ color: "var(--accent-ink)" }}>
             Results import saved: {applyState.created} new, {applyState.updated} updated.
           </p>
-          <p className="mt-1 text-[var(--muted)]">
+          <p className="tg-body-sm tg-muted" style={{ marginTop: 4 }}>
             Skipped {applyState.skippedManual} manual override{applyState.skippedManual === 1 ? "" : "s"},{" "}
             {applyState.skippedUnmatched} unmatched game{applyState.skippedUnmatched === 1 ? "" : "s"}, and saw{" "}
             {applyState.scheduledOnly} schedule-only row{applyState.scheduledOnly === 1 ? "" : "s"}.
@@ -134,48 +158,73 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
       )}
 
       {payload && (
-        <form action={formAction} className="space-y-4 rounded-lg border border-[var(--line)] bg-white p-4">
+        <form
+          action={formAction}
+          style={{
+            display: "grid",
+            gap: 16,
+            border: "1px solid var(--line)",
+            borderRadius: 4,
+            background: "var(--panel-strong)",
+            padding: 16,
+          }}
+        >
           <input type="hidden" name="eventId" value={eventId} />
           <input type="hidden" name="divisionId" value={selectedDivisionId} />
           <input type="hidden" name="draft" value={JSON.stringify(payload.draft)} />
 
-          <p className="text-sm font-semibold text-[var(--accent)]">
-            Preview ready: {payload.preview.items.length} USAU row{payload.preview.items.length === 1 ? "" : "s"} found. Review the
-            changes below, then confirm.
+          <p className="tg-label" style={{ color: "var(--accent-ink)" }}>
+            Preview ready: {payload.preview.items.length} USAU row{payload.preview.items.length === 1 ? "" : "s"} found.
+            Review the changes below, then confirm.
           </p>
 
-          <div className="flex flex-wrap gap-2 text-xs">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {Object.entries(payload.preview.counts).map(([label, count]) => (
-              <span key={label} className="rounded-full border border-[var(--line)] bg-[var(--panel)] px-2.5 py-1">
+              <span key={label} className="tg-pill">
                 {label.replaceAll("_", " ").toLowerCase()}: {count}
               </span>
             ))}
           </div>
 
           {finalImportCount === 0 && (
-            <p className="rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 py-2 text-sm text-[var(--muted)]">
-              No new final scores found. This usually means the URL is schedule-only, the results are already saved, or USAU has not
-              posted final scores yet.
+            <p
+              className="tg-body-sm tg-muted"
+              style={{
+                border: "1px solid var(--line)",
+                borderRadius: 4,
+                background: "var(--panel)",
+                padding: "8px 12px",
+              }}
+            >
+              No new final scores found. This usually means the URL is schedule-only, the results are already saved, or
+              USAU has not posted final scores yet.
             </p>
           )}
 
-          <div className="max-h-80 overflow-auto rounded-md border border-[var(--line)]">
-            <table className="w-full min-w-[760px] text-sm">
+          <div
+            style={{
+              maxHeight: 320,
+              overflow: "auto",
+              border: "1px solid var(--line)",
+              borderRadius: 4,
+            }}
+          >
+            <table className="tg-table" style={{ minWidth: 760 }}>
               <thead>
-                <tr className="border-b border-[var(--line)] bg-[var(--panel)] text-left">
-                  <th className="p-2">Action</th>
-                  <th className="p-2">Round/section</th>
-                  <th className="p-2">Imported</th>
-                  <th className="p-2">Existing</th>
+                <tr>
+                  <th>Action</th>
+                  <th>Round/section</th>
+                  <th>Imported</th>
+                  <th>Existing</th>
                 </tr>
               </thead>
               <tbody>
                 {payload.preview.items.map((item, index) => (
-                  <tr key={`${item.sourceGameKey}-${index}`} className="border-b border-[var(--line)] align-top">
-                    <td className="p-2 font-semibold">{item.action.replaceAll("_", " ")}</td>
-                    <td className="p-2">{item.label}</td>
-                    <td className="p-2">{formatResult(item.imported)}</td>
-                    <td className="p-2 text-[var(--muted)]">
+                  <tr key={`${item.sourceGameKey}-${index}`}>
+                    <td className="tg-strong">{item.action.replaceAll("_", " ")}</td>
+                    <td>{item.label}</td>
+                    <td>{formatResult(item.imported)}</td>
+                    <td className="tg-muted">
                       {item.existing ? formatResult(item.existing) : "No existing game"}
                       {item.existing?.manualOverride ? " - manual override" : ""}
                     </td>
@@ -185,17 +234,15 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
             </table>
           </div>
 
-          <label className="flex items-center gap-2 text-sm font-semibold">
+          <label className="tg-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="checkbox" name="overwriteManual" value="true" />
             Overwrite manual results when the import conflicts
           </label>
-          <button
-            type="submit"
-            disabled={applyPending}
-            className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-strong)] disabled:opacity-60"
-          >
-            {applyPending ? "Saving results..." : "Confirm import"}
-          </button>
+          <div>
+            <button type="submit" disabled={applyPending} className="tg-btn">
+              {applyPending ? "Saving results..." : "Confirm import"}
+            </button>
+          </div>
         </form>
       )}
     </div>

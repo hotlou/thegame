@@ -4,7 +4,12 @@ import { getPrisma } from "@/lib/prisma";
 
 export default async function EntriesPage() {
   const event = await getCurrentEvent();
-  if (!event) return <Card>No event found.</Card>;
+  if (!event)
+    return (
+      <Card>
+        <p className="tg-body">No event found.</p>
+      </Card>
+    );
   const entries = await getPrisma().entry.findMany({
     where: { eventId: event.id },
     include: {
@@ -16,34 +21,47 @@ export default async function EntriesPage() {
   });
 
   return (
-    <Card>
-      <h1 className="text-2xl font-bold">Entries</h1>
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[860px] text-sm">
-          <thead>
-            <tr className="border-b border-[var(--line)] text-left">
-              <th className="py-2 pr-2">Name</th>
-              <th className="py-2 pr-2">Email</th>
-              <th className="py-2 pr-2">Submitted</th>
-              <th className="py-2 pr-2">Score</th>
-              <th className="py-2 pr-2">Picks</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry) => (
-              <tr key={entry.id} className="border-b border-[var(--line)] align-top">
-                <td className="py-3 pr-2">{entry.displayName}</td>
-                <td className="py-3 pr-2">{entry.user.email}</td>
-                <td className="py-3 pr-2">{entry.submittedAt.toLocaleString()}</td>
-                <td className="py-3 pr-2">{entry.score?.totalPoints ?? 0}</td>
-                <td className="py-3 pr-2 text-[var(--muted)]">
-                  {entry.picks.map((pick) => `${pick.slot}: ${pick.team.name}`).join(", ")}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <>
+      <div className="tg-eyebrow">
+        <h2>Entries</h2>
+        <span className="meta">{entries.length} submitted</span>
       </div>
-    </Card>
+      <Card>
+        <h1 className="tg-h2">Entries</h1>
+        <div style={{ marginTop: 16, overflowX: "auto" }}>
+          <table className="tg-table" style={{ minWidth: 860 }}>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Submitted</th>
+                <th>Score</th>
+                <th>Picks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry) => (
+                <tr key={entry.id}>
+                  <td className="tg-strong">{entry.displayName}</td>
+                  <td className="tg-muted">{entry.user.email}</td>
+                  <td>{entry.submittedAt.toLocaleString()}</td>
+                  <td className="rank-cell">{entry.score?.totalPoints ?? 0}</td>
+                  <td className="tg-muted">
+                    {entry.picks.map((pick) => `${pick.slot}: ${pick.team.name}`).join(", ")}
+                  </td>
+                </tr>
+              ))}
+              {entries.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="tg-muted" style={{ textAlign: "center", padding: 24 }}>
+                    No entries yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </>
   );
 }

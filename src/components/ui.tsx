@@ -5,8 +5,20 @@ export function PageShell({ children }: { children: React.ReactNode }) {
   return <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-12">{children}</main>;
 }
 
-export function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <section className={clsx("tg-card", className)}>{children}</section>;
+export function Card({
+  children,
+  className,
+  style,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <section className={clsx("tg-card", className)} style={style}>
+      {children}
+    </section>
+  );
 }
 
 type ButtonVariant = "primary" | "alt";

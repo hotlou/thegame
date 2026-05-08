@@ -5,14 +5,26 @@ export default function NotFound() {
   return (
     <PageShell>
       <SiteNav />
-      <div className="grid flex-1 place-items-center py-16">
-        <Card className="w-full max-w-xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">404</p>
-          <h1 className="mt-3 text-3xl font-bold">That page is out of bounds.</h1>
-          <p className="mx-auto mt-3 max-w-md text-[var(--muted)]">
+      <div style={{ display: "grid", placeItems: "center", flex: 1, padding: "64px 0" }}>
+        <Card style={{ width: "100%", maxWidth: 560, textAlign: "center" }}>
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              color: "var(--secondary)",
+            }}
+          >
+            404
+          </p>
+          <h1 className="tg-h1" style={{ marginTop: 12 }}>
+            That page is out of bounds.
+          </h1>
+          <p className="tg-body tg-muted" style={{ marginTop: 12, maxWidth: 420, marginInline: "auto" }}>
             TheGame could not find that route. Head back to the current event and keep the picks moving.
           </p>
-          <div className="mt-6 flex justify-center">
+          <div style={{ marginTop: 22, display: "flex", justifyContent: "center" }}>
             <ButtonLink href="/">Go to TheGame</ButtonLink>
           </div>
         </Card>
