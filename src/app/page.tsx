@@ -13,8 +13,8 @@ export default async function HomePage() {
     <PageShell>
       <SiteNav />
       <Card>
-        <h1 className="text-3xl font-bold">TheGame is ready for setup.</h1>
-        <p className="mt-3 text-[var(--muted)]">
+        <h1 className="tg-h1">TheGame is ready for setup.</h1>
+        <p className="tg-body tg-muted" style={{ marginTop: 12 }}>
           Run the seed script or create an event in the database to begin configuring College D-I 2026.
         </p>
       </Card>

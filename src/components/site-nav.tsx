@@ -1,29 +1,55 @@
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@/auth";
 import { getCurrentEvent } from "@/lib/events";
+import { NavLinks } from "./nav-links";
 
 export async function SiteNav() {
   const [session, event] = await Promise.all([safeAuth(), getCurrentEvent()]);
   const eventHref = event ? `/events/${event.slug}` : "/";
 
   return (
-    <nav className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-4">
-      <Link href={eventHref} className="text-xl font-bold tracking-normal">
-        TheGame
-      </Link>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        {event && <Link href={`/events/${event.slug}/leaderboard`}>Leaderboard</Link>}
-        {event && <Link href={`/events/${event.slug}/entry`}>My entry</Link>}
-        {session?.user?.role === "ADMIN" && <Link href="/admin">Admin</Link>}
-        {session?.user ? (
-          <span className="rounded-full bg-white px-3 py-1 text-[var(--muted)]">{session.user.email}</span>
-        ) : (
-          <Link href="/sign-in" className="rounded-md bg-[var(--accent)] px-3 py-2 font-semibold text-white">
-            Sign in
-          </Link>
-        )}
+    <>
+      <div className="tg-masthead-top">
+        <span>
+          <a href="mailto:tips@thegame.ultiworld.com">News, tips &amp; rumors: tips@thegame.ultiworld.com</a>
+        </span>
+        <span>
+          <a href="/about">About</a>
+          <a href="https://discord.gg/ultiworld" target="_blank" rel="noreferrer">
+            Discord
+          </a>
+          <a href="https://ultiworld.com" target="_blank" rel="noreferrer">
+            Ultiworld &#8599;
+          </a>
+        </span>
       </div>
-    </nav>
+
+      <Link href={eventHref} className="tg-masthead">
+        <Image
+          src="/brand/ultiworld-logo.png"
+          alt="Ultiworld"
+          width={200}
+          height={200}
+          priority
+          className="uw-logo"
+        />
+        <div className="lockup">
+          <div className="brand-mark">
+            The<span className="red">Game</span>
+          </div>
+          <div className="presented-by">
+            Presented by <span className="uw-name">Ultiworld</span>
+          </div>
+        </div>
+      </Link>
+
+      <NavLinks
+        eventHref={event ? eventHref : null}
+        isAdmin={session?.user?.role === "ADMIN"}
+        userEmail={session?.user?.email ?? null}
+      />
+    </>
   );
 }
 

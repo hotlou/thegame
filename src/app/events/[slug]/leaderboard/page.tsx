@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Card, PageShell, Pill } from "@/components/ui";
 import { SiteNav } from "@/components/site-nav";
+import { AdRail } from "@/components/ad-slot";
 import { getPrisma } from "@/lib/prisma";
 import { picksAreVisible } from "@/lib/events";
 
@@ -28,48 +29,76 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
   return (
     <PageShell>
       <SiteNav />
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+
+      <div className="tg-eyebrow">
+        <h2>The Standings</h2>
+        <span className="meta">{event.name}</span>
+      </div>
+
+      <div
+        style={{
+          marginBottom: 20,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-bold">Leaderboard</h1>
-          <p className="mt-2 text-[var(--muted)]">{event.name}</p>
+          <h1 className="tg-h1">Leaderboard</h1>
+          <p className="tg-body tg-muted" style={{ marginTop: 8 }}>
+            {entries.length} {entries.length === 1 ? "entry" : "entries"}
+          </p>
         </div>
-        <Pill>{visible ? "Picks visible" : "Picks hidden until lock"}</Pill>
+        <Pill tone={visible ? "accent" : "default"}>
+          {visible ? "Picks visible" : "Picks hidden until lock"}
+        </Pill>
       </div>
 
       <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
+        <div style={{ overflowX: "auto" }}>
+          <table className="tg-table">
             <thead>
-              <tr className="border-b border-[var(--line)] text-left">
-                <th className="py-2 pr-3">Rank</th>
-                <th className="py-2 pr-3">Entry</th>
-                <th className="py-2 pr-3">Team pts</th>
-                <th className="py-2 pr-3">Bonus pts</th>
-                <th className="py-2 pr-3">Total</th>
-                <th className="py-2 pr-3">Picks</th>
+              <tr>
+                <th>Rank</th>
+                <th>Entry</th>
+                <th>Team pts</th>
+                <th>Bonus pts</th>
+                <th>Total</th>
+                <th>Picks</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((entry, index) => (
-                <tr key={entry.id} className="border-b border-[var(--line)] align-top">
-                  <td className="py-3 pr-3 font-semibold">{index + 1}</td>
-                  <td className="py-3 pr-3">{entry.displayName}</td>
-                  <td className="py-3 pr-3">{formatScore(entry.score?.teamPoints ?? 0)}</td>
-                  <td className="py-3 pr-3">{formatScore(entry.score?.bonusQuestionPoints ?? 0)}</td>
-                  <td className="py-3 pr-3 font-bold">{formatScore(entry.score?.totalPoints ?? 0)}</td>
-                  <td className="py-3 pr-3 text-[var(--muted)]">
+                <tr key={entry.id}>
+                  <td className="rank-cell">{index + 1}</td>
+                  <td>{entry.displayName}</td>
+                  <td>{formatScore(entry.score?.teamPoints ?? 0)}</td>
+                  <td>{formatScore(entry.score?.bonusQuestionPoints ?? 0)}</td>
+                  <td className="tg-strong">{formatScore(entry.score?.totalPoints ?? 0)}</td>
+                  <td className="tg-muted">
                     {visible
                       ? entry.picks
                           .map((pick) => `${pick.slot === "BONUS" ? "Bonus: " : ""}${pick.team.name}`)
                           .join(", ")
-                      : "Hidden"}
+                      : "Hidden until lock"}
                   </td>
                 </tr>
               ))}
+              {entries.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="tg-muted" style={{ textAlign: "center", padding: 24 }}>
+                    No entries yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </Card>
+
+      <AdRail />
     </PageShell>
   );
 }

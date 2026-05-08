@@ -28,26 +28,42 @@ export default async function SignInPage({
   return (
     <PageShell>
       <SiteNav />
-      <Card className="mx-auto w-full max-w-md">
-        <h1 className="text-2xl font-bold">Sign in</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">
+      <Card className="mx-auto w-full max-w-md" >
+        <h1 className="tg-h2">Sign in</h1>
+        <p className="tg-body-sm tg-muted" style={{ marginTop: 8 }}>
           Enter your email and we will send a magic link for your entry.
         </p>
         {query.error === "missing-config" && (
-          <div className="mt-4 rounded-md border border-[var(--danger)] bg-white p-3 text-sm">
-            <p className="font-semibold text-[var(--danger)]">Local auth is missing configuration.</p>
-            <p className="mt-1 text-[var(--muted)]">
-              Pull the Vercel env vars into `.env.local`, then restart the dev server.
+          <div
+            className="tg-card"
+            style={{
+              marginTop: 16,
+              padding: 12,
+              background: "var(--panel-strong)",
+              borderColor: "var(--danger)",
+            }}
+          >
+            <p className="tg-label" style={{ color: "var(--danger)" }}>
+              Local auth is missing configuration.
             </p>
-            {missing.length > 0 && <p className="mt-2 font-mono text-xs">Missing: {missing.join(", ")}</p>}
+            <p className="tg-body-sm tg-muted" style={{ marginTop: 4 }}>
+              Pull the Vercel env vars into <code className="tg-mono">.env.local</code>, then restart the dev server.
+            </p>
+            {missing.length > 0 && (
+              <p className="tg-body-sm" style={{ marginTop: 8, fontFamily: "var(--font-mono)" }}>
+                Missing: {missing.join(", ")}
+              </p>
+            )}
           </div>
         )}
-        <form action={signInAction} className="mt-5 space-y-4">
-          <label className="block text-sm font-semibold">
+        <form action={signInAction} style={{ marginTop: 20 }}>
+          <label className="tg-label">
             Email
-            <TextInput className="mt-1" name="email" type="email" required />
+            <TextInput name="email" type="email" required style={{ marginTop: 6 }} />
           </label>
-          <SubmitButton>Email me a magic link</SubmitButton>
+          <div style={{ marginTop: 16 }}>
+            <SubmitButton>Email me a magic link</SubmitButton>
+          </div>
         </form>
       </Card>
     </PageShell>

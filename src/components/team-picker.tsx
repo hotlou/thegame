@@ -41,36 +41,64 @@ export function TeamPicker({
   }
 
   return (
-    <div className="space-y-3">
+    <div style={{ display: "grid", gap: 12 }}>
       {slots.map((slot) => {
         const selectedTeam = selected[slot.name] ? teamById.get(selected[slot.name]) : null;
         const slotTeams = teams.filter((team) => slot.bucket === "ANY" || team.bucket === slot.bucket);
         const isOpen = openSlot === slot.name;
 
         return (
-          <section key={slot.name} className="rounded-lg border border-[var(--line)] bg-white">
+          <section
+            key={slot.name}
+            style={{
+              border: "1px solid var(--line)",
+              borderRadius: 4,
+              background: "var(--panel-strong)",
+            }}
+          >
             <input type="hidden" name={slot.name} value={selected[slot.name] ?? ""} required />
             <button
               type="button"
               disabled={disabled}
               onClick={() => setOpenSlot(isOpen ? "" : slot.name)}
-              className="focus-ring flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-70"
+              className="focus-ring"
+              style={{
+                display: "flex",
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                background: "transparent",
+                border: 0,
+                padding: "12px 16px",
+                textAlign: "left",
+                cursor: disabled ? "not-allowed" : "pointer",
+                opacity: disabled ? 0.7 : 1,
+              }}
             >
               <span>
-                <span className="block text-sm font-bold">{slot.label}</span>
-                <span className="mt-1 block text-xs text-[var(--muted)]">
+                <span className="tg-h4" style={{ display: "block" }}>
+                  {slot.label}
+                </span>
+                <span className="tg-body-sm tg-muted" style={{ display: "block", marginTop: 2, textTransform: "none", letterSpacing: 0 }}>
                   {selectedTeam
                     ? `${selectedTeam.seed}. ${selectedTeam.name} (${selectedTeam.division.gender === "MENS" ? "M" : "W"}, B${selectedTeam.bucket})`
                     : slot.helper}
                 </span>
               </span>
-              <span className="rounded-md border border-[var(--line)] px-2 py-1 text-xs text-[var(--muted)]">
-                {isOpen ? "Close" : "Choose"}
-              </span>
+              <span className="tg-pill">{isOpen ? "Close" : "Choose"}</span>
             </button>
 
             {isOpen && !disabled && (
-              <div className="grid gap-4 border-t border-[var(--line)] p-4 md:grid-cols-2">
+              <div
+                style={{
+                  display: "grid",
+                  gap: 16,
+                  borderTop: "1px solid var(--line)",
+                  padding: 16,
+                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                }}
+              >
                 <TeamColumn
                   title="Men"
                   teams={slotTeams.filter((team) => team.division.gender === "MENS")}
@@ -105,8 +133,19 @@ function TeamColumn({
 }) {
   return (
     <div>
-      <h3 className="mb-2 text-xs font-bold uppercase text-[var(--muted)]">{title}</h3>
-      <div className="flex flex-wrap gap-2">
+      <h3
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--secondary)",
+          marginBottom: 8,
+        }}
+      >
+        {title}
+      </h3>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {teams.map((team) => {
           const selected = selectedTeamId === team.id;
           return (
@@ -114,13 +153,22 @@ function TeamColumn({
               key={team.id}
               type="button"
               onClick={() => onChoose(team.id)}
-              className={`focus-ring rounded-full border px-3 py-2 text-left text-sm transition ${
-                selected
-                  ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                  : "border-[var(--line)] bg-[var(--panel)] hover:border-[var(--accent)]"
-              }`}
+              className="focus-ring"
+              style={{
+                borderRadius: 3,
+                padding: "6px 10px",
+                fontSize: 13,
+                cursor: "pointer",
+                background: selected ? "var(--accent)" : "var(--panel-strong)",
+                color: selected ? "#fff" : "var(--foreground)",
+                border: `1px solid ${selected ? "var(--accent)" : "var(--line)"}`,
+                fontWeight: 600,
+              }}
             >
-              <span className="font-semibold">{team.seed}.</span> {team.name}
+              <span style={{ fontFamily: "var(--font-mono)", marginRight: 6, opacity: 0.8 }}>
+                {team.seed}.
+              </span>
+              {team.name}
             </button>
           );
         })}
