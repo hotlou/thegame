@@ -124,17 +124,31 @@ button {
 }
 @media (max-width: 640px) {
   .tg-masthead {
-    flex-direction: column;
     gap: 12px;
   }
   .tg-masthead .uw-logo {
-    height: 64px;
+    height: 56px;
   }
   .tg-masthead .brand-mark {
-    font-size: 40px;
+    font-size: 36px;
   }
   .tg-masthead .presented-by {
-    font-size: 11px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+}
+@media (max-width: 380px) {
+  .tg-masthead {
+    gap: 10px;
+  }
+  .tg-masthead .uw-logo {
+    height: 44px;
+  }
+  .tg-masthead .brand-mark {
+    font-size: 28px;
+  }
+  .tg-masthead .presented-by {
+    font-size: 9px;
   }
 }
 
@@ -462,6 +476,50 @@ button {
   color: var(--accent);
   cursor: pointer;
   text-decoration: underline;
+}
+
+/* ---- Native text ad (inline, editorial) ---- */
+.tg-ad-text {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+  margin: 20px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.tg-ad-text__label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+.tg-ad-text__body {
+  color: var(--muted);
+  flex: 1 1 240px;
+}
+.tg-ad-text__body strong {
+  color: var(--foreground);
+  font-weight: 700;
+}
+.tg-ad-text__cta {
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+  flex-shrink: 0;
+}
+.tg-ad-text:hover .tg-ad-text__cta {
+  color: var(--secondary);
+  border-color: var(--secondary);
 }
 
 /* ---- Ad slots ---- */

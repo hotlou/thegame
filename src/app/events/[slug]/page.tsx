@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, ButtonLink, PageShell, Pill } from "@/components/ui";
 import { SiteNav } from "@/components/site-nav";
-import { AdRail } from "@/components/ad-slot";
+import { AdRail, TextAd } from "@/components/ad-slot";
 import { getPrisma } from "@/lib/prisma";
 import { entryIsLocked, picksAreVisible } from "@/lib/events";
 
@@ -78,6 +78,8 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
         </Card>
       </div>
 
+      <TextAd partner="combat" />
+
       <div className="tg-eyebrow">
         <h2>The Buckets</h2>
         <span className="meta">Pick rules</span>
@@ -102,6 +104,8 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           </p>
         </Card>
       </section>
+
+      <TextAd partner="unbench" />
 
       <div className="tg-eyebrow">
         <h2>Field of Play</h2>

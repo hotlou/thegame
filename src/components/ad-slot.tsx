@@ -98,6 +98,40 @@ export function AdSlot({ partner }: { partner: Partner }) {
   );
 }
 
+const TEXT_AD_COPY: Record<Partner, { brand: string; line: string; cta: string; href: string }> = {
+  combat: {
+    brand: "Combat Candy",
+    line: "Fuel for the deep cut — sour-sweet chews engineered for the second half.",
+    cta: "Shop",
+    href: PARTNERS.combat.href,
+  },
+  unbench: {
+    brand: "Unbenchable",
+    line: "Where UFA fantasy ultimate and card games collide. Draft, trade, win bragging rights.",
+    cta: "Play",
+    href: PARTNERS.unbench.href,
+  },
+  almanac: {
+    brand: "UFA Almanac",
+    line: "Every UFA stat, every season. Box scores, ratings, and a deep historical archive.",
+    cta: "Browse",
+    href: PARTNERS.almanac.href,
+  },
+};
+
+export function TextAd({ partner }: { partner: Partner }) {
+  const copy = TEXT_AD_COPY[partner];
+  return (
+    <a className="tg-ad-text" href={copy.href} target="_blank" rel="noopener sponsored">
+      <span className="tg-ad-text__label">Sponsored</span>
+      <span className="tg-ad-text__body">
+        <strong>{copy.brand}</strong> &mdash; {copy.line}
+      </span>
+      <span className="tg-ad-text__cta">{copy.cta} &rarr;</span>
+    </a>
+  );
+}
+
 export function AdRail() {
   return (
     <>
