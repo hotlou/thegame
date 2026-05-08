@@ -7,9 +7,14 @@ export const alt = "TheGame event — make your picks";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default async function EventOpengraphImage({ params }: { params: { slug: string } }) {
+export default async function EventOpengraphImage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
   const event = await getPrisma().event.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
     select: { name: true, isLocked: true, entryLockAt: true },
   });
   if (!event) notFound();
