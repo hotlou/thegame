@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, ButtonLink, PageShell, Pill } from "@/components/ui";
 import { SiteNav } from "@/components/site-nav";
@@ -7,6 +8,39 @@ import { getPrisma } from "@/lib/prisma";
 import { entryIsLocked, picksAreVisible } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const event = await getPrisma().event.findUnique({
+    where: { slug },
+    select: { name: true, isLocked: true, entryLockAt: true },
+  });
+  if (!event) return { title: "Event not found" };
+  const locked = event.isLocked || (event.entryLockAt ? new Date(event.entryLockAt) <= new Date() : false);
+  const description = locked
+    ? `${event.name} entries are locked. Track the leaderboard on TheGame, Ultiworld's free pick'em.`
+    : `Pick four regular teams plus one bonus team for ${event.name}. Free pick'em from Ultiworld.`;
+  const url = `/events/${slug}`;
+  return {
+    title: event.name,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: `${event.name} · TheGame`,
+      description,
+      url,
+      type: "article",
+    },
+    twitter: {
+      title: `${event.name} · TheGame`,
+      description,
+    },
+  };
+}
 
 export default async function EventPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

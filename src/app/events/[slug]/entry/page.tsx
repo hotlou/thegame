@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { Card, PageShell, Select, SubmitButton, TextInput } from "@/components/ui";
@@ -9,6 +10,25 @@ import { entryIsLocked } from "@/lib/events";
 import { saveEntryAction } from "@/lib/entry-actions";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const event = await getPrisma().event.findUnique({
+    where: { slug },
+    select: { name: true },
+  });
+  if (!event) return { title: "Entry" };
+  return {
+    title: `My entry — ${event.name}`,
+    description: `Make and edit your picks for ${event.name} on TheGame.`,
+    robots: { index: false, follow: false },
+    alternates: { canonical: `/events/${slug}/entry` },
+  };
+}
 
 export default async function EntryPage({
   params,

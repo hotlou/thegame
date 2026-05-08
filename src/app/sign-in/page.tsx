@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { signIn, auth } from "@/auth";
 import { Card, PageShell, SubmitButton, TextInput } from "@/components/ui";
@@ -5,6 +6,13 @@ import { SiteNav } from "@/components/site-nav";
 import { getMissingAuthConfig } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to TheGame with a magic link to make and edit your picks.",
+  robots: { index: false, follow: false },
+  alternates: { canonical: "/sign-in" },
+};
 
 async function signInAction(formData: FormData) {
   "use server";

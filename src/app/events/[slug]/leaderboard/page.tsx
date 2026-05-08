@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, PageShell, Pill } from "@/components/ui";
 import { SiteNav } from "@/components/site-nav";
@@ -6,6 +7,28 @@ import { getPrisma } from "@/lib/prisma";
 import { picksAreVisible } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const event = await getPrisma().event.findUnique({
+    where: { slug },
+    select: { name: true },
+  });
+  if (!event) return { title: "Leaderboard" };
+  const url = `/events/${slug}/leaderboard`;
+  const description = `Live leaderboard for ${event.name} on TheGame, Ultiworld's free pick'em.`;
+  return {
+    title: `${event.name} leaderboard`,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title: `${event.name} leaderboard · TheGame`, description, url, type: "article" },
+    twitter: { title: `${event.name} leaderboard · TheGame`, description },
+  };
+}
 
 export default async function LeaderboardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
