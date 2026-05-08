@@ -6,14 +6,22 @@ import { clearGameResultAction, createGameAction, saveGameResultAction } from "@
 
 export default async function GamesPage() {
   const event = await getCurrentEvent();
-  if (!event) return <Card>No event found.</Card>;
+  if (!event)
+    return (
+      <Card>
+        <p className="tg-body">No event found.</p>
+      </Card>
+    );
 
   const games = await getPrisma().game.findMany({
     where: { eventId: event.id, championshipPath: true },
     include: { division: true, team1: true, team2: true },
     orderBy: [{ division: { sortOrder: "asc" } }, { stage: "asc" }, { sortOrder: "asc" }],
   });
-  const divisions = await getPrisma().division.findMany({ where: { eventId: event.id }, orderBy: { sortOrder: "asc" } });
+  const divisions = await getPrisma().division.findMany({
+    where: { eventId: event.id },
+    orderBy: { sortOrder: "asc" },
+  });
   const teams = await getPrisma().team.findMany({
     where: { eventId: event.id },
     include: { division: true },
@@ -21,127 +29,157 @@ export default async function GamesPage() {
   });
 
   return (
-    <div className="grid gap-5">
-      <Card>
-        <h1 className="text-2xl font-bold">Import results</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          Pull proposed results from USAU, review the diff, then confirm. Manual edits are preserved unless you choose to overwrite them.
-        </p>
-        <div className="mt-4">
-          <ResultsImportTool eventId={event.id} divisions={divisions} />
-        </div>
-      </Card>
+    <>
+      <div className="tg-eyebrow">
+        <h2>Results</h2>
+        <span className="meta">{games.length} games · {games.filter((g) => g.status === "FINAL").length} final</span>
+      </div>
 
-      <Card>
-        <h1 className="text-2xl font-bold">Add game</h1>
-        <form action={createGameAction} className="mt-4 grid gap-3 md:grid-cols-3">
-          <input type="hidden" name="eventId" value={event.id} />
-          <label className="block text-sm font-semibold">
-            Division
-            <Select name="divisionId" required>
-              <option value="">Choose division</option>
-              {divisions.map((division) => (
-                <option key={division.id} value={division.id}>
-                  {division.name}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className="block text-sm font-semibold">
-            Stage
-            <Select name="stage" required defaultValue="POOL">
-              {["POOL", "PREQUARTER", "QUARTER", "SEMI", "FINAL", "OTHER"].map((stage) => (
-                <option key={stage} value={stage}>
-                  {stage}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className="block text-sm font-semibold">
-            Label
-            <TextInput name="label" />
-          </label>
-          <label className="block text-sm font-semibold">
-            Pool
-            <TextInput name="pool" />
-          </label>
-          <label className="block text-sm font-semibold">
-            Team 1
-            <TeamSelect name="team1Id" teams={teams} />
-          </label>
-          <label className="block text-sm font-semibold">
-            Team 2
-            <TeamSelect name="team2Id" teams={teams} />
-          </label>
-          <label className="flex items-center gap-2 text-sm font-semibold">
-            <input type="checkbox" name="championshipPath" value="true" defaultChecked />
-            Counts for scoring
-          </label>
-          <div className="md:col-span-3">
-            <SubmitButton>Add game</SubmitButton>
+      <div style={{ display: "grid", gap: 20 }}>
+        <Card>
+          <h1 className="tg-h2">Import results</h1>
+          <p className="tg-body-sm tg-muted" style={{ marginTop: 6 }}>
+            Pull proposed results from USAU, review the diff, then confirm. Manual edits are preserved unless you choose to
+            overwrite them.
+          </p>
+          <div style={{ marginTop: 16 }}>
+            <ResultsImportTool eventId={event.id} divisions={divisions} />
           </div>
-        </form>
-      </Card>
+        </Card>
 
-      <Card>
-        <h1 className="text-2xl font-bold">Game results</h1>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[980px] text-sm">
-            <thead>
-              <tr className="border-b border-[var(--line)] text-left">
-                <th className="py-2 pr-2">Division</th>
-                <th className="py-2 pr-2">Stage</th>
-                <th className="py-2 pr-2">Team 1</th>
-                <th className="py-2 pr-2">Score</th>
-                <th className="py-2 pr-2">Team 2</th>
-                <th className="py-2 pr-2">Score</th>
-                <th className="py-2 pr-2">Status</th>
-                <th className="py-2 pr-2">Source</th>
-                <th className="py-2 pr-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {games.map((game) => (
-                <tr key={game.id} className="border-b border-[var(--line)]">
-                  <td className="py-2 pr-2">{game.division.name}</td>
-                  <td className="py-2 pr-2">{game.stage}</td>
-                  <td className="py-2 pr-2">{game.team1?.name ?? "TBD"}</td>
-                  <td className="py-2 pr-2">
-                    <form id={`game-${game.id}`} action={saveGameResultAction} className="contents">
-                      <input type="hidden" name="eventId" value={event.id} />
-                      <input type="hidden" name="gameId" value={game.id} />
-                      <TextInput name="team1Score" type="number" min={0} defaultValue={game.team1Score ?? ""} />
-                    </form>
-                  </td>
-                  <td className="py-2 pr-2">{game.team2?.name ?? "TBD"}</td>
-                  <td className="py-2 pr-2">
-                    <TextInput form={`game-${game.id}`} name="team2Score" type="number" min={0} defaultValue={game.team2Score ?? ""} />
-                  </td>
-                  <td className="py-2 pr-2">{game.status}</td>
-                  <td className="py-2 pr-2 text-xs text-[var(--muted)]">
-                    {game.manualOverride ? "Manual" : game.lastImportedAt ? "Imported" : game.resultSource}
-                  </td>
-                  <td className="py-2 pr-2">
-                    <div className="flex flex-wrap gap-2">
-                      <button form={`game-${game.id}`} className="rounded-md bg-[var(--accent)] px-3 py-2 text-white">
-                        Save
-                      </button>
-                      <form action={clearGameResultAction}>
+        <Card>
+          <h1 className="tg-h2">Add game</h1>
+          <form
+            action={createGameAction}
+            style={{
+              display: "grid",
+              gap: 12,
+              marginTop: 16,
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            }}
+          >
+            <input type="hidden" name="eventId" value={event.id} />
+            <label className="tg-label">
+              Division
+              <Select name="divisionId" required style={{ marginTop: 6 }}>
+                <option value="">Choose division</option>
+                {divisions.map((division) => (
+                  <option key={division.id} value={division.id}>
+                    {division.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className="tg-label">
+              Stage
+              <Select name="stage" required defaultValue="POOL" style={{ marginTop: 6 }}>
+                {["POOL", "PREQUARTER", "QUARTER", "SEMI", "FINAL", "OTHER"].map((stage) => (
+                  <option key={stage} value={stage}>
+                    {stage}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className="tg-label">
+              Label
+              <TextInput name="label" style={{ marginTop: 6 }} />
+            </label>
+            <label className="tg-label">
+              Pool
+              <TextInput name="pool" style={{ marginTop: 6 }} />
+            </label>
+            <label className="tg-label">
+              Team 1
+              <TeamSelect name="team1Id" teams={teams} />
+            </label>
+            <label className="tg-label">
+              Team 2
+              <TeamSelect name="team2Id" teams={teams} />
+            </label>
+            <label className="tg-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="checkbox" name="championshipPath" value="true" defaultChecked />
+              Counts for scoring
+            </label>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <SubmitButton>Add game</SubmitButton>
+            </div>
+          </form>
+        </Card>
+
+        <Card>
+          <h1 className="tg-h2">Game results</h1>
+          <div style={{ marginTop: 16, overflowX: "auto" }}>
+            <table className="tg-table" style={{ minWidth: 980 }}>
+              <thead>
+                <tr>
+                  <th>Division</th>
+                  <th>Stage</th>
+                  <th>Team 1</th>
+                  <th>Score</th>
+                  <th>Team 2</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th>Source</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {games.map((game) => (
+                  <tr key={game.id}>
+                    <td>{game.division.name}</td>
+                    <td className="rank-cell">{game.stage}</td>
+                    <td>{game.team1?.name ?? "TBD"}</td>
+                    <td>
+                      <form id={`game-${game.id}`} action={saveGameResultAction} className="contents">
                         <input type="hidden" name="eventId" value={event.id} />
                         <input type="hidden" name="gameId" value={game.id} />
-                        <button className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[var(--text)]">
-                          Clear
-                        </button>
+                        <TextInput name="team1Score" type="number" min={0} defaultValue={game.team1Score ?? ""} />
                       </form>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-    </div>
+                    </td>
+                    <td>{game.team2?.name ?? "TBD"}</td>
+                    <td>
+                      <TextInput
+                        form={`game-${game.id}`}
+                        name="team2Score"
+                        type="number"
+                        min={0}
+                        defaultValue={game.team2Score ?? ""}
+                      />
+                    </td>
+                    <td>{game.status}</td>
+                    <td className="tg-muted" style={{ fontSize: 12 }}>
+                      {game.manualOverride ? "Manual" : game.lastImportedAt ? "Imported" : game.resultSource}
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        <button form={`game-${game.id}`} className="tg-btn tg-btn--sm tg-btn--alt">
+                          Save
+                        </button>
+                        <form action={clearGameResultAction}>
+                          <input type="hidden" name="eventId" value={event.id} />
+                          <input type="hidden" name="gameId" value={game.id} />
+                          <button
+                            type="submit"
+                            className="tg-btn tg-btn--sm"
+                            style={{
+                              background: "var(--panel-strong)",
+                              color: "var(--foreground)",
+                              border: "1px solid var(--line)",
+                            }}
+                          >
+                            Clear
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+    </>
   );
 }
 
@@ -153,7 +191,7 @@ function TeamSelect({
   teams: Array<{ id: string; name: string; seed: number; division: { name: string } }>;
 }) {
   return (
-    <Select name={name}>
+    <Select name={name} style={{ marginTop: 6 }}>
       <option value="">TBD</option>
       {teams.map((team) => (
         <option key={team.id} value={team.id}>

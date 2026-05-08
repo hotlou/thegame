@@ -44,18 +44,29 @@ export function ImportTool({ eventId }: { eventId: string }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: "grid", gap: 16 }}>
       {saveState.ok && (
-        <div className="rounded-lg border border-[var(--accent)] bg-white p-4">
-          <p className="font-semibold text-[var(--accent)]">
+        <div
+          style={{
+            border: "1px solid var(--accent)",
+            borderRadius: 4,
+            background: "var(--panel-strong)",
+            padding: 14,
+          }}
+        >
+          <p className="tg-label" style={{ color: "var(--accent-ink)" }}>
             Saved {saveState.divisionName}: {saveState.teamCount} teams and {saveState.gameCount} games.
           </p>
-          {saveState.sourceUrl && <p className="mt-1 text-xs text-[var(--muted)]">From {saveState.sourceUrl}</p>}
-          <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
-            <Link className="text-[var(--accent)] underline" href="/admin/teams">
+          {saveState.sourceUrl && (
+            <p className="tg-body-sm tg-muted" style={{ marginTop: 4, fontFamily: "var(--font-mono)" }}>
+              From {saveState.sourceUrl}
+            </p>
+          )}
+          <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 16, fontSize: 13, fontWeight: 600 }}>
+            <Link className="tg-inline-link" href="/admin/teams">
               Go to teams
             </Link>
-            <Link className="text-[var(--accent)] underline" href="/admin/games">
+            <Link className="tg-inline-link" href="/admin/games">
               Go to games/results
             </Link>
             <button
@@ -65,31 +76,50 @@ export function ImportTool({ eventId }: { eventId: string }) {
                 setUrl("");
                 setError("");
               }}
-              className="font-semibold text-[var(--accent)] underline"
+              className="tg-inline-link"
+              style={{ background: "transparent", border: 0, padding: 0, font: "inherit", cursor: "pointer" }}
             >
               Import another division
             </button>
           </div>
         </div>
       )}
-      <label className="block text-sm font-semibold">
+      <label className="tg-label">
         USAU schedule URL
-        <TextInput value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://play.usaultimate.org/..." />
+        <TextInput
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+          placeholder="https://play.usaultimate.org/..."
+          style={{ marginTop: 6 }}
+        />
       </label>
-      <button
-        type="button"
-        onClick={preview}
-        disabled={pending || !url}
-        className="focus-ring rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-      >
-        {pending ? "Parsing..." : "Preview import"}
-      </button>
-      {error && <p className="text-sm font-semibold text-[var(--danger)]">{error}</p>}
+      <div>
+        <button
+          type="button"
+          onClick={preview}
+          disabled={pending || !url}
+          className="tg-btn tg-btn--alt"
+        >
+          {pending ? "Parsing..." : "Preview import"}
+        </button>
+      </div>
+      {error && (
+        <p className="tg-body-sm" style={{ color: "var(--danger)", fontWeight: 600 }}>
+          {error}
+        </p>
+      )}
       {draft && (
-        <form action={formAction} className="space-y-3">
+        <form action={formAction} style={{ display: "grid", gap: 12 }}>
           <input type="hidden" name="eventId" value={eventId} />
-          <Textarea name="draft" value={draft} onChange={(event) => setDraft(event.target.value)} className="min-h-96 font-mono" />
-          <SubmitButton>{savePending ? "Saving..." : "Save reviewed import"}</SubmitButton>
+          <Textarea
+            name="draft"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            style={{ minHeight: 384, fontFamily: "var(--font-mono)" }}
+          />
+          <div>
+            <SubmitButton>{savePending ? "Saving..." : "Save reviewed import"}</SubmitButton>
+          </div>
         </form>
       )}
     </div>

@@ -2,78 +2,89 @@ import Link from "next/link";
 import { clsx } from "clsx";
 
 export function PageShell({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6">{children}</main>;
+  return <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-12">{children}</main>;
 }
 
-export function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+export function Card({
+  children,
+  className,
+  style,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <section className={clsx("rounded-lg border border-[var(--line)] bg-[var(--panel)] p-5 shadow-sm", className)}>
+    <section className={clsx("tg-card", className)} style={style}>
       {children}
     </section>
   );
 }
 
-export function ButtonLink({ href, children }: { href: string; children: React.ReactNode }) {
+type ButtonVariant = "primary" | "alt";
+
+const buttonClass = (variant: ButtonVariant = "primary") =>
+  clsx("tg-btn", variant === "alt" && "tg-btn--alt");
+
+export function ButtonLink({
+  href,
+  children,
+  variant = "primary",
+}: {
+  href: string;
+  children: React.ReactNode;
+  variant?: ButtonVariant;
+}) {
   return (
-    <Link
-      href={href}
-      className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-strong)]"
-    >
+    <Link href={href} className={buttonClass(variant)}>
       {children}
     </Link>
   );
 }
 
-export function SubmitButton({ children }: { children: React.ReactNode }) {
+export function SubmitButton({
+  children,
+  variant = "primary",
+}: {
+  children: React.ReactNode;
+  variant?: ButtonVariant;
+}) {
   return (
-    <button
-      type="submit"
-      className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-strong)]"
-    >
+    <button type="submit" className={buttonClass(variant)}>
       {children}
     </button>
   );
 }
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={clsx(
-        "focus-ring min-h-10 w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm",
-        props.className,
-      )}
-    />
-  );
+  return <input {...props} className={clsx("tg-input", props.className)} />;
 }
 
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={clsx(
-        "focus-ring min-h-10 w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm",
-        props.className,
-      )}
-    />
-  );
+  return <select {...props} className={clsx("tg-input tg-select", props.className)} />;
 }
 
 export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       {...props}
-      className={clsx(
-        "focus-ring min-h-28 w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm",
-        props.className,
-      )}
+      className={clsx("tg-input min-h-28", props.className)}
+      style={{ paddingTop: 8, paddingBottom: 8, ...props.style }}
     />
   );
 }
 
-export function Pill({ children }: { children: React.ReactNode }) {
+type PillTone = "default" | "accent" | "red";
+
+export function Pill({ children, tone = "default" }: { children: React.ReactNode; tone?: PillTone }) {
   return (
-    <span className="inline-flex rounded-full border border-[var(--line)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--muted)]">
+    <span
+      className={clsx(
+        "tg-pill",
+        tone === "accent" && "tg-pill--accent",
+        tone === "red" && "tg-pill--red",
+      )}
+    >
       {children}
     </span>
   );

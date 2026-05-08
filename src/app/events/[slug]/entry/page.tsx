@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { Card, PageShell, Select, SubmitButton, TextInput } from "@/components/ui";
 import { SiteNav } from "@/components/site-nav";
 import { TeamPicker } from "@/components/team-picker";
+import { AdRail } from "@/components/ad-slot";
 import { getPrisma } from "@/lib/prisma";
 import { entryIsLocked } from "@/lib/events";
 import { saveEntryAction } from "@/lib/entry-actions";
@@ -31,8 +32,10 @@ export default async function EntryPage({
       <PageShell>
         <SiteNav />
         <Card>
-          <h1 className="text-2xl font-bold">Sign in to make your picks</h1>
-          <p className="mt-2 text-[var(--muted)]">Entries are tied to one email address so you can edit until lock.</p>
+          <h1 className="tg-h2">Sign in to make your picks</h1>
+          <p className="tg-body-sm tg-muted" style={{ marginTop: 8 }}>
+            Entries are tied to one email address so you can edit until lock.
+          </p>
         </Card>
       </PageShell>
     );
@@ -50,89 +53,115 @@ export default async function EntryPage({
   return (
     <PageShell>
       <SiteNav />
-      <div className="mb-5">
-        <h1 className="text-3xl font-bold">My entry</h1>
-        <p className="mt-2 text-[var(--muted)]">
-          {locked ? "Entries are locked." : "You can edit these picks until the event locks."}
-        </p>
-        {query.saved && <p className="mt-2 text-sm font-semibold text-[var(--accent)]">Entry saved.</p>}
+
+      <div className="tg-eyebrow">
+        <h2>Your Card</h2>
+        <span className="meta">{event.name}</span>
       </div>
 
-      <form action={action} className="grid gap-5 lg:grid-cols-[1fr_0.7fr]">
-        <Card className="space-y-4">
-          <label className="block text-sm font-semibold">
-            Display name
-            <TextInput name="displayName" defaultValue={entry?.displayName ?? session.user.name ?? ""} required disabled={locked} />
-          </label>
+      <div style={{ marginBottom: 20 }}>
+        <h1 className="tg-h1">My entry</h1>
+        <p className="tg-body tg-muted" style={{ marginTop: 8 }}>
+          {locked ? "Entries are locked." : "You can edit these picks until the event locks."}
+        </p>
+        {query.saved && (
+          <p className="tg-body-sm" style={{ marginTop: 8, color: "var(--accent-ink)", fontWeight: 600 }}>
+            Entry saved.
+          </p>
+        )}
+      </div>
 
-          <TeamPicker
-            disabled={locked}
-            teams={event.teams}
-            slots={[
-              {
-                name: "B1",
-                label: "Bucket 1 regular pick",
-                helper: "Seeds 1-5. Pick one team.",
-                bucket: 1,
-                value: pickBySlot.get("B1"),
-              },
-              {
-                name: "B2A",
-                label: "Bucket 2 regular pick",
-                helper: "Seeds 6-12. Pick the first of two teams.",
-                bucket: 2,
-                value: pickBySlot.get("B2A"),
-              },
-              {
-                name: "B2B",
-                label: "Bucket 2 regular pick",
-                helper: "Seeds 6-12. Pick the second of two teams.",
-                bucket: 2,
-                value: pickBySlot.get("B2B"),
-              },
-              {
-                name: "B3",
-                label: "Bucket 3 regular pick",
-                helper: "Seeds 13-20. Pick one team.",
-                bucket: 3,
-                value: pickBySlot.get("B3"),
-              },
-              {
-                name: "BONUS",
-                label: "Designated bonus team",
-                helper: "Any bucket, no duplicate teams.",
-                bucket: "ANY",
-                value: pickBySlot.get("BONUS"),
-              },
-            ]}
-          />
+      <form action={action} className="tg-grid tg-grid--entry">
+        <Card>
+          <div style={{ display: "grid", gap: 16 }}>
+            <label className="tg-label">
+              Display name
+              <TextInput
+                name="displayName"
+                defaultValue={entry?.displayName ?? session.user.name ?? ""}
+                required
+                disabled={locked}
+                style={{ marginTop: 6 }}
+              />
+            </label>
+
+            <TeamPicker
+              disabled={locked}
+              teams={event.teams}
+              slots={[
+                {
+                  name: "B1",
+                  label: "Bucket 1 regular pick",
+                  helper: "Seeds 1–5. Pick one team.",
+                  bucket: 1,
+                  value: pickBySlot.get("B1"),
+                },
+                {
+                  name: "B2A",
+                  label: "Bucket 2 regular pick",
+                  helper: "Seeds 6–12. Pick the first of two teams.",
+                  bucket: 2,
+                  value: pickBySlot.get("B2A"),
+                },
+                {
+                  name: "B2B",
+                  label: "Bucket 2 regular pick",
+                  helper: "Seeds 6–12. Pick the second of two teams.",
+                  bucket: 2,
+                  value: pickBySlot.get("B2B"),
+                },
+                {
+                  name: "B3",
+                  label: "Bucket 3 regular pick",
+                  helper: "Seeds 13–20. Pick one team.",
+                  bucket: 3,
+                  value: pickBySlot.get("B3"),
+                },
+                {
+                  name: "BONUS",
+                  label: "Designated bonus team",
+                  helper: "Any bucket, no duplicate teams.",
+                  bucket: "ANY",
+                  value: pickBySlot.get("BONUS"),
+                },
+              ]}
+            />
+          </div>
         </Card>
 
-        <Card className="space-y-4">
-          <h2 className="text-lg font-bold">Bonus questions</h2>
-          {event.bonusQuestions.length === 0 && <p className="text-sm text-[var(--muted)]">No bonus props are open yet.</p>}
-          {event.bonusQuestions.map((question) => (
-            <label key={question.id} className="block text-sm font-semibold">
-              {question.prompt}
-              <span className="ml-2 text-xs font-normal text-[var(--muted)]">{question.points} pts</span>
-              <Select
-                name={`bonus_${question.id}`}
-                defaultValue={answerByQuestion.get(question.id) ?? ""}
-                disabled={locked}
-                className="mt-1"
-              >
-                <option value="">Choose an answer</option>
-                {question.options.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          ))}
-          {!locked && <SubmitButton>Save entry</SubmitButton>}
+        <Card>
+          <h2 className="tg-h4">Bonus questions</h2>
+          <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
+            {event.bonusQuestions.length === 0 && (
+              <p className="tg-body-sm tg-muted">No bonus props are open yet.</p>
+            )}
+            {event.bonusQuestions.map((question) => (
+              <label key={question.id} className="tg-label">
+                {question.prompt}
+                <span className="tg-muted" style={{ marginLeft: 8, fontSize: 12, fontWeight: 400 }}>
+                  {question.points} pts
+                </span>
+                <Select
+                  name={`bonus_${question.id}`}
+                  defaultValue={answerByQuestion.get(question.id) ?? ""}
+                  disabled={locked}
+                  style={{ marginTop: 6 }}
+                >
+                  <option value="">Choose an answer</option>
+                  {question.options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            ))}
+            {!locked && <SubmitButton>Save entry</SubmitButton>}
+          </div>
         </Card>
       </form>
+
+      <AdRail />
     </PageShell>
   );
 }

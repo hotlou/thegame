@@ -5,7 +5,14 @@ import { getPrisma } from "@/lib/prisma";
 export default async function AdminPage() {
   const event = await getCurrentEvent();
   if (!event) {
-    return <Card>No event exists yet. Run `npm run db:seed` to create the starter event.</Card>;
+    return (
+      <Card>
+        <p className="tg-body">
+          No event exists yet. Run <code style={{ fontFamily: "var(--font-mono)" }}>npm run db:seed</code> to create the
+          starter event.
+        </p>
+      </Card>
+    );
   }
 
   const [teams, games, entries, scoredGames] = await Promise.all([
@@ -17,8 +24,14 @@ export default async function AdminPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold">{event.name}</h1>
-      <div className="mt-5 grid gap-4 md:grid-cols-4">
+      <div className="tg-eyebrow">
+        <h2>The Console</h2>
+        <span className="meta">{event.slug}</span>
+      </div>
+
+      <h1 className="tg-h-hero" style={{ marginTop: 4 }}>{event.name}</h1>
+
+      <div className="tg-grid tg-grid--3" style={{ marginTop: 24, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
         <Stat label="Teams" value={teams} />
         <Stat label="Games" value={games} />
         <Stat label="Final games" value={scoredGames} />
@@ -31,8 +44,20 @@ export default async function AdminPage() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <Card>
-      <p className="text-sm text-[var(--muted)]">{label}</p>
-      <p className="mt-2 text-3xl font-bold">{value}</p>
+      <p
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--muted)",
+        }}
+      >
+        {label}
+      </p>
+      <p className="tg-h1" style={{ marginTop: 8, fontFamily: "var(--font-mono)", letterSpacing: "-0.02em" }}>
+        {value}
+      </p>
     </Card>
   );
 }

@@ -7,8 +7,11 @@
   --line: #d7d0c2;
   --panel: #fffaf1;
   --panel-strong: #ffffff;
-  --accent: #0b6b67;
-  --accent-strong: #084f4c;
+  --accent: #00aba9;
+  --accent-strong: #008684;
+  --accent-ink: #066d6c;
+  --secondary: #c8242b;
+  --secondary-strong: #a31c22;
   --danger: #b42318;
 }
 
@@ -28,6 +31,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -45,4 +49,586 @@ button {
 .focus-ring:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* =========================================================
+   TheGame — Ultiworld-aligned editorial styles
+   ========================================================= */
+
+/* ---- Top utility bar ---- */
+.tg-masthead-top {
+  border-bottom: 1px solid var(--line);
+  padding: 6px 0;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tg-masthead-top a {
+  color: var(--muted);
+  margin-right: 14px;
+}
+.tg-masthead-top a:hover {
+  color: var(--accent-ink);
+}
+
+/* ---- Masthead lockup ---- */
+.tg-masthead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 26px 0 22px;
+  border-bottom: 3px double var(--line);
+}
+.tg-masthead .uw-logo {
+  display: block;
+  height: 88px;
+  width: auto;
+  flex: 0 0 auto;
+}
+.tg-masthead .lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1;
+}
+.tg-masthead .brand-mark {
+  font-family: var(--font-sans);
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+  line-height: 1;
+  margin: 0;
+}
+.tg-masthead .brand-mark .red {
+  color: var(--secondary);
+}
+.tg-masthead .presented-by {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  line-height: 1;
+}
+.tg-masthead .presented-by .uw-name {
+  color: var(--secondary);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+@media (max-width: 640px) {
+  .tg-masthead {
+    gap: 12px;
+  }
+  .tg-masthead .uw-logo {
+    height: 56px;
+  }
+  .tg-masthead .brand-mark {
+    font-size: 36px;
+  }
+  .tg-masthead .presented-by {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+}
+@media (max-width: 380px) {
+  .tg-masthead {
+    gap: 10px;
+  }
+  .tg-masthead .uw-logo {
+    height: 44px;
+  }
+  .tg-masthead .brand-mark {
+    font-size: 28px;
+  }
+  .tg-masthead .presented-by {
+    font-size: 9px;
+  }
+}
+
+/* ---- Site nav ---- */
+.tg-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+.tg-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  margin-left: auto;
+}
+.tg-link {
+  cursor: pointer;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+}
+.tg-link--active {
+  color: var(--accent-ink);
+  border-bottom-color: var(--accent);
+}
+.tg-link:hover {
+  color: var(--accent-ink);
+}
+
+/* ---- Buttons ---- */
+.tg-btn {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  background: var(--secondary);
+  color: #fff;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 0;
+  cursor: pointer;
+}
+.tg-btn:hover {
+  background: var(--secondary-strong);
+}
+.tg-btn:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tg-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.tg-btn--sm {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+.tg-btn--alt {
+  background: var(--accent);
+}
+.tg-btn--alt:hover {
+  background: var(--accent-strong);
+}
+
+/* ---- Inputs ---- */
+.tg-input {
+  display: block;
+  min-height: 40px;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  border-radius: 3px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--foreground);
+}
+.tg-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tg-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.tg-select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 18px, calc(100% - 13px) 18px;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+}
+
+/* ---- Pills ---- */
+.tg-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tg-pill--accent {
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.tg-pill--red {
+  color: var(--secondary);
+  border-color: var(--secondary);
+}
+
+/* ---- Section eyebrow ---- */
+.tg-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0 14px;
+}
+.tg-eyebrow::before {
+  content: "";
+  width: 4px;
+  height: 18px;
+  background: var(--secondary);
+}
+.tg-eyebrow h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+.tg-eyebrow .meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.tg-byline {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.tg-byline strong {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* ---- Cards ---- */
+.tg-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 20px;
+  box-shadow: none;
+}
+
+/* ---- Type helpers ---- */
+.tg-h-hero {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.tg-h1 {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.tg-h2 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+}
+.tg-h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+.tg-h4 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.tg-body {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+.tg-body-sm {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+.tg-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+.tg-muted {
+  color: var(--muted);
+}
+.tg-strong {
+  font-weight: 700;
+}
+
+/* ---- Definition list ---- */
+.tg-dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 12px;
+  column-gap: 16px;
+  margin: 16px 0 0;
+  font-size: 14px;
+}
+.tg-dl dt {
+  color: var(--muted);
+}
+.tg-dl dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ---- Ranked team list ---- */
+.tg-team-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  border-top: 2px solid var(--foreground);
+}
+.tg-team-list li {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 12px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+}
+.tg-team-list li .rank {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.tg-team-list li .name {
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+.tg-team-list li .name:hover {
+  text-decoration: underline;
+}
+.tg-team-list li .bucket {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- Leaderboard table ---- */
+.tg-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.tg-table th,
+.tg-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.tg-table thead tr {
+  border-bottom: 2px solid var(--foreground);
+}
+.tg-table th {
+  font-weight: 700;
+  color: var(--foreground);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding-bottom: 8px;
+}
+.tg-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.4);
+}
+.tg-table tr:last-child td {
+  border-bottom: 0;
+}
+.tg-table .rank-cell {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.tg-inline-link {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ---- Native text ad (inline, editorial) ---- */
+.tg-ad-text {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+  margin: 20px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.tg-ad-text__label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+.tg-ad-text__body {
+  color: var(--muted);
+  flex: 1 1 240px;
+}
+.tg-ad-text__body strong {
+  color: var(--foreground);
+  font-weight: 700;
+}
+.tg-ad-text__cta {
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+  flex-shrink: 0;
+}
+.tg-ad-text:hover .tg-ad-text__cta {
+  color: var(--secondary);
+  border-color: var(--secondary);
+}
+
+/* ---- Ad slots ---- */
+.tg-ad {
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+}
+.tg-ad-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.tg-ad img {
+  max-height: 56px;
+  width: auto;
+  display: block;
+}
+.tg-ad-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.tg-ad-line {
+  font-size: 14px;
+  color: var(--muted);
+}
+.tg-ad-line strong {
+  color: var(--foreground);
+  font-weight: 700;
+}
+.tg-ad-cta {
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 2px;
+}
+.tg-ad-cta:hover {
+  color: var(--secondary);
+  border-color: var(--secondary);
+}
+
+.tg-ad-banner {
+  display: block;
+  position: relative;
+  margin-top: 28px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  cursor: pointer;
+  line-height: 0;
+  background: #0a0a0a;
+}
+.tg-ad-banner__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.tg-ad-banner__eyebrow {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #fff;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 2px;
+  line-height: 1;
+}
+.tg-ad-banner__cta {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: var(--foreground);
+  padding: 8px 12px 8px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.tg-ad-banner__cta img {
+  height: 22px;
+  width: 22px;
+  display: block;
+}
+.tg-ad-banner:hover .tg-ad-banner__cta {
+  background: #b6f23a;
+}
+@media (max-width: 640px) {
+  .tg-ad {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

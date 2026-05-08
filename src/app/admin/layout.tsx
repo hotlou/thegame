@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/authz";
 import { PageShell } from "@/components/ui";
+import { AdminNavLinks } from "@/components/admin-nav-links";
 
-const links = [
+const links: Array<[string, string]> = [
   ["/admin", "Dashboard"],
   ["/admin/settings", "Settings"],
   ["/admin/import", "Import"],
@@ -19,16 +20,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await requireAdmin();
   return (
     <PageShell>
-      <nav className="mb-6 flex flex-wrap items-center gap-3 border-b border-[var(--line)] pb-4 text-sm">
-        <Link href="/" className="mr-3 text-xl font-bold">
-          TheGame Admin
-        </Link>
-        {links.map(([href, label]) => (
-          <Link key={href} href={href} className="rounded-md bg-white px-3 py-2">
-            {label}
-          </Link>
-        ))}
-      </nav>
+      <div className="tg-masthead-top">
+        <span style={{ letterSpacing: "0.06em" }}>Admin console</span>
+        <span>
+          <Link href="/">View site &#8599;</Link>
+        </span>
+      </div>
+
+      <Link href="/admin" className="tg-masthead">
+        <div className="lockup">
+          <div className="brand-mark">
+            The<span className="red">Game</span>
+          </div>
+          <div className="presented-by">
+            <span className="uw-name">Admin</span> Console
+          </div>
+        </div>
+      </Link>
+
+      <AdminNavLinks links={links} />
       {children}
     </PageShell>
   );

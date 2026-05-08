@@ -4,36 +4,59 @@ import { updateEventSettingsAction } from "@/lib/admin-actions";
 
 export default async function SettingsPage() {
   const event = await getCurrentEvent();
-  if (!event) return <Card>No event found.</Card>;
+  if (!event)
+    return (
+      <Card>
+        <p className="tg-body">No event found.</p>
+      </Card>
+    );
 
   return (
-    <Card className="max-w-2xl">
-      <h1 className="text-2xl font-bold">Event settings</h1>
-      <form action={updateEventSettingsAction} className="mt-5 space-y-4">
-        <input type="hidden" name="eventId" value={event.id} />
-        <label className="block text-sm font-semibold">
-          Name
-          <TextInput name="name" defaultValue={event.name} required />
-        </label>
-        <label className="block text-sm font-semibold">
-          Slug
-          <TextInput name="slug" defaultValue={event.slug} required />
-        </label>
-        <label className="block text-sm font-semibold">
-          Entry lock
-          <TextInput name="entryLockAt" type="datetime-local" defaultValue={toDateTimeLocal(event.entryLockAt)} />
-        </label>
-        <label className="block text-sm font-semibold">
-          Picks visible at
-          <TextInput name="picksVisibleAt" type="datetime-local" defaultValue={toDateTimeLocal(event.picksVisibleAt)} />
-        </label>
-        <label className="flex items-center gap-2 text-sm font-semibold">
-          <input type="checkbox" name="isLocked" value="true" defaultChecked={event.isLocked} />
-          Lock entries now
-        </label>
-        <SubmitButton>Save settings</SubmitButton>
-      </form>
-    </Card>
+    <>
+      <div className="tg-eyebrow">
+        <h2>Event Settings</h2>
+        <span className="meta">{event.slug}</span>
+      </div>
+      <Card style={{ maxWidth: 720 }}>
+        <h1 className="tg-h2">Event settings</h1>
+        <form action={updateEventSettingsAction} style={{ display: "grid", gap: 16, marginTop: 20 }}>
+          <input type="hidden" name="eventId" value={event.id} />
+          <label className="tg-label">
+            Name
+            <TextInput name="name" defaultValue={event.name} required style={{ marginTop: 6 }} />
+          </label>
+          <label className="tg-label">
+            Slug
+            <TextInput name="slug" defaultValue={event.slug} required style={{ marginTop: 6 }} />
+          </label>
+          <label className="tg-label">
+            Entry lock
+            <TextInput
+              name="entryLockAt"
+              type="datetime-local"
+              defaultValue={toDateTimeLocal(event.entryLockAt)}
+              style={{ marginTop: 6 }}
+            />
+          </label>
+          <label className="tg-label">
+            Picks visible at
+            <TextInput
+              name="picksVisibleAt"
+              type="datetime-local"
+              defaultValue={toDateTimeLocal(event.picksVisibleAt)}
+              style={{ marginTop: 6 }}
+            />
+          </label>
+          <label className="tg-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input type="checkbox" name="isLocked" value="true" defaultChecked={event.isLocked} />
+            Lock entries now
+          </label>
+          <div>
+            <SubmitButton>Save settings</SubmitButton>
+          </div>
+        </form>
+      </Card>
+    </>
   );
 }
 

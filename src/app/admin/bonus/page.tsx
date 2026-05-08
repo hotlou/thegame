@@ -5,7 +5,12 @@ import { createBonusQuestionAction, setCorrectBonusOptionAction } from "@/lib/ad
 
 export default async function BonusPage() {
   const event = await getCurrentEvent();
-  if (!event) return <Card>No event found.</Card>;
+  if (!event)
+    return (
+      <Card>
+        <p className="tg-body">No event found.</p>
+      </Card>
+    );
   const questions = await getPrisma().bonusQuestion.findMany({
     where: { eventId: event.id },
     include: { options: { orderBy: { sortOrder: "asc" } } },
@@ -13,57 +18,82 @@ export default async function BonusPage() {
   });
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[0.7fr_1.3fr]">
-      <Card>
-        <h1 className="text-2xl font-bold">Add bonus prop</h1>
-        <form action={createBonusQuestionAction} className="mt-4 space-y-3">
-          <input type="hidden" name="eventId" value={event.id} />
-          <label className="block text-sm font-semibold">
-            Prompt
-            <TextInput name="prompt" required />
-          </label>
-          <label className="block text-sm font-semibold">
-            Points
-            <TextInput name="points" type="number" min={1} required />
-          </label>
-          <label className="block text-sm font-semibold">
-            Options, one per line
-            <Textarea name="options" required />
-          </label>
-          <SubmitButton>Create question</SubmitButton>
-        </form>
-      </Card>
+    <>
+      <div className="tg-eyebrow">
+        <h2>Bonus Props</h2>
+        <span className="meta">{questions.length} questions</span>
+      </div>
 
-      <Card>
-        <h1 className="text-2xl font-bold">Bonus props</h1>
-        <div className="mt-4 space-y-5">
-          {questions.map((question) => (
-            <section key={question.id} className="border-b border-[var(--line)] pb-4">
-              <h2 className="font-semibold">
-                {question.prompt} <span className="text-sm text-[var(--muted)]">({question.points} pts)</span>
-              </h2>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {question.options.map((option) => (
-                  <form key={option.id} action={setCorrectBonusOptionAction}>
-                    <input type="hidden" name="eventId" value={event.id} />
-                    <input type="hidden" name="questionId" value={question.id} />
-                    <input type="hidden" name="optionId" value={option.id} />
-                    <button
-                      className={`rounded-md border px-3 py-2 text-sm ${
-                        option.isCorrect
-                          ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                          : "border-[var(--line)] bg-white"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  </form>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </Card>
-    </div>
+      <div
+        className="tg-grid"
+        style={{ gridTemplateColumns: "minmax(280px, 0.7fr) minmax(0, 1.3fr)", gap: 20 }}
+      >
+        <Card>
+          <h1 className="tg-h2">Add bonus prop</h1>
+          <form action={createBonusQuestionAction} style={{ display: "grid", gap: 12, marginTop: 16 }}>
+            <input type="hidden" name="eventId" value={event.id} />
+            <label className="tg-label">
+              Prompt
+              <TextInput name="prompt" required style={{ marginTop: 6 }} />
+            </label>
+            <label className="tg-label">
+              Points
+              <TextInput name="points" type="number" min={1} required style={{ marginTop: 6 }} />
+            </label>
+            <label className="tg-label">
+              Options, one per line
+              <Textarea name="options" required style={{ marginTop: 6 }} />
+            </label>
+            <div>
+              <SubmitButton>Create question</SubmitButton>
+            </div>
+          </form>
+        </Card>
+
+        <Card>
+          <h1 className="tg-h2">Bonus props</h1>
+          <div style={{ marginTop: 16, display: "grid", gap: 18 }}>
+            {questions.map((question) => (
+              <section
+                key={question.id}
+                style={{ borderBottom: "1px solid var(--line)", paddingBottom: 16 }}
+              >
+                <h2 className="tg-h4" style={{ textTransform: "none", letterSpacing: 0 }}>
+                  {question.prompt}{" "}
+                  <span className="tg-muted" style={{ fontSize: 12, fontWeight: 400 }}>
+                    ({question.points} pts)
+                  </span>
+                </h2>
+                <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {question.options.map((option) => (
+                    <form key={option.id} action={setCorrectBonusOptionAction}>
+                      <input type="hidden" name="eventId" value={event.id} />
+                      <input type="hidden" name="questionId" value={question.id} />
+                      <input type="hidden" name="optionId" value={option.id} />
+                      <button
+                        className="focus-ring"
+                        style={{
+                          borderRadius: 3,
+                          padding: "6px 10px",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          background: option.isCorrect ? "var(--accent)" : "var(--panel-strong)",
+                          color: option.isCorrect ? "#fff" : "var(--foreground)",
+                          border: `1px solid ${option.isCorrect ? "var(--accent)" : "var(--line)"}`,
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    </form>
+                  ))}
+                </div>
+              </section>
+            ))}
+            {questions.length === 0 && <p className="tg-body-sm tg-muted">No bonus props yet.</p>}
+          </div>
+        </Card>
+      </div>
+    </>
   );
 }
