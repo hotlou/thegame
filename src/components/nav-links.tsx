@@ -20,6 +20,9 @@ export function NavLinks({
 
   return (
     <nav className="tg-nav">
+      <Link href="/" className={linkClass("/", true)}>
+        Events
+      </Link>
       {eventHref && (
         <Link href={eventHref} className={linkClass(eventHref, true)}>
           Event

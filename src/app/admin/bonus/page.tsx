@@ -1,10 +1,12 @@
 import { Card, SubmitButton, Textarea, TextInput } from "@/components/ui";
-import { getCurrentEvent } from "@/lib/events";
+import { AdminEventSwitcher } from "@/components/admin-event-switcher";
+import { getAdminEvent, getAllEvents } from "@/lib/events";
 import { getPrisma } from "@/lib/prisma";
 import { createBonusQuestionAction, setCorrectBonusOptionAction } from "@/lib/admin-actions";
 
-export default async function BonusPage() {
-  const event = await getCurrentEvent();
+export default async function BonusPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
+  const [{ event: eventSlug }, events] = await Promise.all([searchParams, getAllEvents()]);
+  const event = await getAdminEvent(eventSlug);
   if (!event)
     return (
       <Card>
@@ -19,6 +21,7 @@ export default async function BonusPage() {
 
   return (
     <>
+      <AdminEventSwitcher events={events} currentSlug={event.slug} basePath="/admin/bonus" />
       <div className="tg-eyebrow">
         <h2>Bonus Props</h2>
         <span className="meta">{questions.length} questions</span>

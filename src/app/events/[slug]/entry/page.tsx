@@ -50,7 +50,7 @@ export default async function EntryPage({
   if (!session?.user) {
     return (
       <PageShell>
-        <SiteNav />
+        <SiteNav eventSlug={slug} />
         <Card>
           <h1 className="tg-h2">Sign in to make your picks</h1>
           <p className="tg-body-sm tg-muted" style={{ marginTop: 8 }}>
@@ -72,7 +72,7 @@ export default async function EntryPage({
 
   return (
     <PageShell>
-      <SiteNav />
+      <SiteNav eventSlug={slug} />
 
       <div className="tg-eyebrow">
         <h2>Your Card</h2>

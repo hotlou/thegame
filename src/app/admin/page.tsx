@@ -1,9 +1,11 @@
 import { Card } from "@/components/ui";
-import { getCurrentEvent } from "@/lib/events";
+import { AdminEventSwitcher } from "@/components/admin-event-switcher";
+import { getAdminEvent, getAllEvents } from "@/lib/events";
 import { getPrisma } from "@/lib/prisma";
 
-export default async function AdminPage() {
-  const event = await getCurrentEvent();
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
+  const [{ event: eventSlug }, events] = await Promise.all([searchParams, getAllEvents()]);
+  const event = await getAdminEvent(eventSlug);
   if (!event) {
     return (
       <Card>
@@ -24,6 +26,7 @@ export default async function AdminPage() {
 
   return (
     <div>
+      <AdminEventSwitcher events={events} currentSlug={event.slug} basePath="/admin" />
       <div className="tg-eyebrow">
         <h2>The Console</h2>
         <span className="meta">{event.slug}</span>

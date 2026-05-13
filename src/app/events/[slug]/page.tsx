@@ -47,6 +47,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
   const event = await getPrisma().event.findUnique({
     where: { slug },
     include: {
+      divisions: { orderBy: { sortOrder: "asc" } },
       teams: { include: { division: true }, orderBy: [{ division: { sortOrder: "asc" } }, { seed: "asc" }] },
       bonusQuestions: { include: { options: true }, orderBy: { sortOrder: "asc" } },
     },
@@ -59,7 +60,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
 
   return (
     <PageShell>
-      <SiteNav />
+      <SiteNav eventSlug={slug} />
 
       <div className="tg-eyebrow">
         <h2>The Headline Event</h2>
@@ -145,27 +146,34 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
         <h2>Field of Play</h2>
         <span className="meta">{event.teams.length} teams</span>
       </div>
-      <div className="tg-grid tg-grid--2">
-        {(["MENS", "WOMENS"] as const).map((gender) => {
-          const teams = event.teams.filter((team) => team.division.gender === gender);
-          return (
-            <div key={gender}>
-              <h3 className="tg-h4" style={{ marginBottom: 8, color: "var(--secondary)" }}>
-                {gender === "MENS" ? "College D-I Men's" : "College D-I Women's"}
-              </h3>
-              <ol className="tg-team-list">
-                {teams.map((team) => (
-                  <li key={team.id}>
-                    <span className="rank">{team.seed}</span>
-                    <span className="name">{team.name}</span>
-                    <span className="bucket">B{team.bucket}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          );
-        })}
-      </div>
+      {event.divisions.length === 0 ? (
+        <Card>
+          <p className="tg-body-sm tg-muted">Teams will appear here after the USAU schedule import is saved.</p>
+        </Card>
+      ) : (
+        <div className="tg-grid tg-grid--2">
+          {event.divisions.map((division) => {
+            const teams = event.teams.filter((team) => team.divisionId === division.id);
+            return (
+              <div key={division.id}>
+                <h3 className="tg-h4" style={{ marginBottom: 8, color: "var(--secondary)" }}>
+                  {division.name}
+                </h3>
+                <ol className="tg-team-list">
+                  {teams.map((team) => (
+                    <li key={team.id}>
+                      <span className="rank">{team.seed}</span>
+                      <span className="name">{team.name}</span>
+                      <span className="bucket">B{team.bucket}</span>
+                    </li>
+                  ))}
+                </ol>
+                {teams.length === 0 && <p className="tg-body-sm tg-muted">No teams imported yet.</p>}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {event.bonusQuestions.length > 0 && (
         <p className="tg-body-sm tg-muted" style={{ marginTop: 16 }}>
@@ -187,4 +195,3 @@ function formatDate(value: Date | string | null | undefined) {
   const date = new Date(value);
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
-

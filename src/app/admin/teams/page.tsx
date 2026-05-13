@@ -1,10 +1,12 @@
 import { Card, Select, SubmitButton, TextInput } from "@/components/ui";
-import { getCurrentEvent } from "@/lib/events";
+import { AdminEventSwitcher } from "@/components/admin-event-switcher";
+import { getAdminEvent, getAllEvents } from "@/lib/events";
 import { getPrisma } from "@/lib/prisma";
 import { upsertTeamAction } from "@/lib/admin-actions";
 
-export default async function TeamsPage() {
-  const event = await getCurrentEvent();
+export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
+  const [{ event: eventSlug }, events] = await Promise.all([searchParams, getAllEvents()]);
+  const event = await getAdminEvent(eventSlug);
   if (!event)
     return (
       <Card>
@@ -24,6 +26,7 @@ export default async function TeamsPage() {
 
   return (
     <>
+      <AdminEventSwitcher events={events} currentSlug={event.slug} basePath="/admin/teams" />
       <div className="tg-eyebrow">
         <h2>Teams</h2>
         <span className="meta">{teams.length} on roster</span>

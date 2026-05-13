@@ -1,9 +1,11 @@
 import { Card } from "@/components/ui";
-import { getCurrentEvent } from "@/lib/events";
+import { AdminEventSwitcher } from "@/components/admin-event-switcher";
+import { getAdminEvent, getAllEvents } from "@/lib/events";
 import { getPrisma } from "@/lib/prisma";
 
-export default async function EntriesPage() {
-  const event = await getCurrentEvent();
+export default async function EntriesPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
+  const [{ event: eventSlug }, events] = await Promise.all([searchParams, getAllEvents()]);
+  const event = await getAdminEvent(eventSlug);
   if (!event)
     return (
       <Card>
@@ -15,13 +17,14 @@ export default async function EntriesPage() {
     include: {
       user: true,
       score: true,
-      picks: { include: { team: true }, orderBy: { slot: "asc" } },
+      picks: { include: { team: { include: { division: true } } }, orderBy: { slot: "asc" } },
     },
     orderBy: { submittedAt: "desc" },
   });
 
   return (
     <>
+      <AdminEventSwitcher events={events} currentSlug={event.slug} basePath="/admin/entries" />
       <div className="tg-eyebrow">
         <h2>Entries</h2>
         <span className="meta">{entries.length} submitted</span>
@@ -47,7 +50,7 @@ export default async function EntriesPage() {
                   <td>{entry.submittedAt.toLocaleString()}</td>
                   <td className="rank-cell">{entry.score?.totalPoints ?? 0}</td>
                   <td className="tg-muted">
-                    {entry.picks.map((pick) => `${pick.slot}: ${pick.team.name}`).join(", ")}
+                    {entry.picks.map((pick) => `${pick.slot}: ${formatPickTeam(pick.team)}`).join(", ")}
                   </td>
                 </tr>
               ))}
@@ -64,4 +67,8 @@ export default async function EntriesPage() {
       </Card>
     </>
   );
+}
+
+function formatPickTeam(team: { name: string; division: { gender: string } }) {
+  return `${team.division.gender === "MENS" ? "Men's" : "Women's"} ${team.name}`;
 }

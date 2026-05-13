@@ -1,9 +1,11 @@
 import { Card } from "@/components/ui";
+import { AdminEventSwitcher } from "@/components/admin-event-switcher";
 import { ImportTool } from "@/components/import-tool";
-import { getCurrentEvent } from "@/lib/events";
+import { getAdminEvent, getAllEvents } from "@/lib/events";
 
-export default async function ImportPage() {
-  const event = await getCurrentEvent();
+export default async function ImportPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
+  const [{ event: eventSlug }, events] = await Promise.all([searchParams, getAllEvents()]);
+  const event = await getAdminEvent(eventSlug);
   if (!event)
     return (
       <Card>
@@ -13,6 +15,7 @@ export default async function ImportPage() {
 
   return (
     <>
+      <AdminEventSwitcher events={events} currentSlug={event.slug} basePath="/admin/import" />
       <div className="tg-eyebrow">
         <h2>USAU Import</h2>
         <span className="meta">{event.slug}</span>

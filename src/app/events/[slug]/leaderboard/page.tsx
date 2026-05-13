@@ -51,7 +51,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
 
   return (
     <PageShell>
-      <SiteNav />
+      <SiteNav eventSlug={slug} />
 
       <div className="tg-eyebrow">
         <h2>The Standings</h2>
@@ -103,7 +103,10 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                   <td className="tg-muted">
                     {visible
                       ? entry.picks
-                          .map((pick) => `${pick.slot === "BONUS" ? "Bonus: " : ""}${pick.team.name}`)
+                          .map(
+                            (pick) =>
+                              `${pick.slot === "BONUS" ? "Bonus: " : ""}${formatPickTeam(pick.team)}`,
+                          )
                           .join(", ")
                       : "Hidden until lock"}
                   </td>
@@ -128,4 +131,8 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
 
 function formatScore(score: number) {
   return Number.isInteger(score) ? String(score) : score.toFixed(1);
+}
+
+function formatPickTeam(team: { name: string; division: { gender: string } }) {
+  return `${team.division.gender === "MENS" ? "Men's" : "Women's"} ${team.name}`;
 }

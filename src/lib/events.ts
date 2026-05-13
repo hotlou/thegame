@@ -20,6 +20,20 @@ export async function getCurrentEvent() {
   }
 }
 
+export async function getAllEvents() {
+  return getPrisma().event.findMany({
+    orderBy: [{ startsAt: "asc" }, { createdAt: "asc" }],
+  });
+}
+
+export async function getAdminEvent(eventSlug?: string) {
+  if (eventSlug) {
+    const event = await getPrisma().event.findUnique({ where: { slug: eventSlug } });
+    if (event) return event;
+  }
+  return getCurrentEvent();
+}
+
 function isMissingEventTableError(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const maybeError = error as { code?: string; message?: string };

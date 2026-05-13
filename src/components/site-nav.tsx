@@ -1,11 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/auth";
-import { getCurrentEvent } from "@/lib/events";
+import { getCurrentEvent, getEventBySlug } from "@/lib/events";
 import { NavLinks } from "./nav-links";
 
-export async function SiteNav() {
-  const [session, event] = await Promise.all([safeAuth(), getCurrentEvent()]);
+export async function SiteNav({ eventSlug }: { eventSlug?: string } = {}) {
+  const [session, event] = await Promise.all([safeAuth(), eventSlug ? getEventBySlug(eventSlug) : getCurrentEvent()]);
   const eventHref = event ? `/events/${event.slug}` : "/";
 
   return (

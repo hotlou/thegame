@@ -18,6 +18,14 @@ const eventSettingsSchema = z.object({
   isLocked: z.coerce.boolean().optional(),
 });
 
+const createEventSchema = z.object({
+  name: z.string().trim().min(1),
+  slug: z.string().trim().min(1).regex(/^[a-z0-9-]+$/),
+  startsAt: z.string().optional(),
+  entryLockAt: z.string().optional(),
+  picksVisibleAt: z.string().optional(),
+});
+
 function optionalDate(value: string | undefined) {
   if (!value) return null;
   const date = new Date(value);
@@ -38,6 +46,27 @@ export async function updateEventSettingsAction(formData: FormData) {
     },
   });
   revalidatePath("/");
+  revalidatePath("/admin/settings");
+}
+
+export async function createEventAction(formData: FormData) {
+  await requireAdmin();
+  const input = createEventSchema.parse(Object.fromEntries(formData));
+  const startsAt = optionalDate(input.startsAt);
+  const entryLockAt = optionalDate(input.entryLockAt) ?? startsAt;
+
+  const event = await getPrisma().event.create({
+    data: {
+      name: input.name,
+      slug: input.slug,
+      startsAt,
+      entryLockAt,
+      picksVisibleAt: optionalDate(input.picksVisibleAt),
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/admin/settings");
 }
 

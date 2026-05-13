@@ -1,11 +1,13 @@
 import { Card, Select, SubmitButton, TextInput } from "@/components/ui";
+import { AdminEventSwitcher } from "@/components/admin-event-switcher";
 import { ResultsImportTool } from "@/components/results-import-tool";
-import { getCurrentEvent } from "@/lib/events";
+import { getAdminEvent, getAllEvents } from "@/lib/events";
 import { getPrisma } from "@/lib/prisma";
 import { clearGameResultAction, createGameAction, saveGameResultAction } from "@/lib/admin-actions";
 
-export default async function GamesPage() {
-  const event = await getCurrentEvent();
+export default async function GamesPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
+  const [{ event: eventSlug }, events] = await Promise.all([searchParams, getAllEvents()]);
+  const event = await getAdminEvent(eventSlug);
   if (!event)
     return (
       <Card>
@@ -30,6 +32,7 @@ export default async function GamesPage() {
 
   return (
     <>
+      <AdminEventSwitcher events={events} currentSlug={event.slug} basePath="/admin/games" />
       <div className="tg-eyebrow">
         <h2>Results</h2>
         <span className="meta">{games.length} games · {games.filter((g) => g.status === "FINAL").length} final</span>
