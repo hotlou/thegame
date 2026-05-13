@@ -97,6 +97,7 @@ model Event {
   startsAt        DateTime?
   entryLockAt     DateTime?
   picksVisibleAt  DateTime?
+  timeZone        String          @default("America/Chicago")
   isLocked        Boolean         @default(false)
   scoringComplete Boolean         @default(false)
   divisions       Division[]

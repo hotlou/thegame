@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import { saveImportDraftAction } from "@/lib/admin-actions";
 import { slugify } from "@/lib/slug";
+import { timeZoneOptions } from "@/lib/time-zone";
 import { Select, SubmitButton, TextInput, Textarea } from "@/components/ui";
 
 type DivisionGender = "MENS" | "WOMENS" | "MIXED" | "OTHER";
@@ -63,6 +64,7 @@ export function ImportTool({ events, currentEventId }: { events: ImportEvent[]; 
   const [divisionGender, setDivisionGender] = useState<DivisionGender>("MENS");
   const [eventName, setEventName] = useState("");
   const [eventSlug, setEventSlug] = useState("");
+  const [eventTimeZone, setEventTimeZone] = useState("America/Chicago");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const [saveState, formAction, savePending] = useActionState(saveDraft, initialState);
@@ -255,6 +257,21 @@ export function ImportTool({ events, currentEventId }: { events: ImportEvent[]; 
                     pattern="[a-z0-9-]+"
                     style={{ marginTop: 6 }}
                   />
+                </label>
+                <label className="tg-label">
+                  Time zone
+                  <Select
+                    name="eventTimeZone"
+                    value={eventTimeZone}
+                    onChange={(event) => setEventTimeZone(event.target.value)}
+                    style={{ marginTop: 6 }}
+                  >
+                    {timeZoneOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} ({option.value})
+                      </option>
+                    ))}
+                  </Select>
                 </label>
                 <label className="tg-label">
                   Starts at

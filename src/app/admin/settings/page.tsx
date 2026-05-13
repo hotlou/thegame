@@ -1,8 +1,9 @@
-import { Card, SubmitButton, TextInput } from "@/components/ui";
+import { Card, Select, SubmitButton, TextInput } from "@/components/ui";
 import { AdminEventSwitcher } from "@/components/admin-event-switcher";
 import { getAdminEvent, getAllEvents } from "@/lib/events";
 import { createEventAction, updateEventSettingsAction } from "@/lib/admin-actions";
 import { getPrisma } from "@/lib/prisma";
+import { formatDateTimeInZone, formatDateTimeLocalInZone, timeZoneOptions } from "@/lib/time-zone";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
   const [{ event: eventSlug }, events] = await Promise.all([searchParams, getAllEvents()]);
@@ -41,22 +42,38 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <TextInput name="slug" defaultValue={event.slug} required style={{ marginTop: 6 }} />
             </label>
             <label className="tg-label">
+              Time zone
+              <Select name="timeZone" defaultValue={event.timeZone} style={{ marginTop: 6 }}>
+                {timeZoneOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} ({option.value})
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className="tg-label">
               Entry lock
               <TextInput
                 name="entryLockAt"
                 type="datetime-local"
-                defaultValue={toDateTimeLocal(event.entryLockAt)}
+                defaultValue={formatDateTimeLocalInZone(event.entryLockAt, event.timeZone)}
                 style={{ marginTop: 6 }}
               />
+              <span className="tg-body-sm tg-muted" style={{ display: "block", marginTop: 4 }}>
+                Interpreted in {event.timeZone}
+              </span>
             </label>
             <label className="tg-label">
               Picks visible at
               <TextInput
                 name="picksVisibleAt"
                 type="datetime-local"
-                defaultValue={toDateTimeLocal(event.picksVisibleAt)}
+                defaultValue={formatDateTimeLocalInZone(event.picksVisibleAt, event.timeZone)}
                 style={{ marginTop: 6 }}
               />
+              <span className="tg-body-sm tg-muted" style={{ display: "block", marginTop: 4 }}>
+                Interpreted in {event.timeZone}
+              </span>
             </label>
             <label className="tg-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input type="checkbox" name="isLocked" value="true" defaultChecked={event.isLocked} />
@@ -135,7 +152,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                       {sources
                         .map((source) => source.lastImportedAt)
                         .filter(Boolean)
-                        .map((date) => formatDateTime(date))
+                        .map((date) => formatDateTimeInZone(date, event.timeZone))
                         .join(", ") || "Never"}
                     </td>
                   </tr>
@@ -173,6 +190,16 @@ function CreateEventCard() {
           <TextInput name="slug" required pattern="[a-z0-9-]+" style={{ marginTop: 6 }} />
         </label>
         <label className="tg-label">
+          Time zone
+          <Select name="timeZone" defaultValue="America/Chicago" style={{ marginTop: 6 }}>
+            {timeZoneOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label} ({option.value})
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label className="tg-label">
           Starts at
           <TextInput name="startsAt" type="datetime-local" style={{ marginTop: 6 }} />
         </label>
@@ -190,14 +217,4 @@ function CreateEventCard() {
       </form>
     </Card>
   );
-}
-
-function toDateTimeLocal(date: Date | null) {
-  if (!date) return "";
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-
-function formatDateTime(date: Date | null) {
-  if (!date) return "";
-  return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }

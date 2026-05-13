@@ -9,6 +9,7 @@ import { bucketForSeed } from "@/lib/rules";
 import { recalculateEventScores } from "@/lib/score-service";
 import { mapTeamsByName, normalizeName } from "@/lib/result-import";
 import { slugify, uniqueSlug } from "@/lib/slug";
+import { dateFromLocalDateTime, normalizeTimeZone } from "@/lib/time-zone";
 
 const divisionGenderSchema = z.enum(["MENS", "WOMENS", "MIXED", "OTHER"]);
 
@@ -16,6 +17,7 @@ const eventSettingsSchema = z.object({
   eventId: z.string().min(1),
   name: z.string().trim().min(1),
   slug: z.string().trim().min(1).regex(/^[a-z0-9-]+$/),
+  timeZone: z.string().trim().optional(),
   entryLockAt: z.string().optional(),
   picksVisibleAt: z.string().optional(),
   isLocked: z.coerce.boolean().optional(),
@@ -24,6 +26,7 @@ const eventSettingsSchema = z.object({
 const createEventSchema = z.object({
   name: z.string().trim().min(1),
   slug: z.string().trim().min(1).regex(/^[a-z0-9-]+$/),
+  timeZone: z.string().trim().optional(),
   startsAt: z.string().optional(),
   entryLockAt: z.string().optional(),
   picksVisibleAt: z.string().optional(),
@@ -34,6 +37,7 @@ const importTargetSchema = z.object({
   eventId: z.string().optional(),
   eventName: z.string().trim().optional(),
   eventSlug: z.string().trim().optional(),
+  eventTimeZone: z.string().trim().optional(),
   eventStartsAt: z.string().optional(),
   eventEntryLockAt: z.string().optional(),
   eventPicksVisibleAt: z.string().optional(),
@@ -44,22 +48,18 @@ const importTargetSchema = z.object({
   divisionGender: divisionGenderSchema.optional(),
 });
 
-function optionalDate(value: string | undefined) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
 export async function updateEventSettingsAction(formData: FormData) {
   await requireAdmin();
   const input = eventSettingsSchema.parse(Object.fromEntries(formData));
+  const timeZone = normalizeTimeZone(input.timeZone);
   await getPrisma().event.update({
     where: { id: input.eventId },
     data: {
       name: input.name,
       slug: input.slug,
-      entryLockAt: optionalDate(input.entryLockAt),
-      picksVisibleAt: optionalDate(input.picksVisibleAt),
+      timeZone,
+      entryLockAt: dateFromLocalDateTime(input.entryLockAt, timeZone),
+      picksVisibleAt: dateFromLocalDateTime(input.picksVisibleAt, timeZone),
       isLocked: input.isLocked ?? false,
     },
   });
@@ -70,16 +70,18 @@ export async function updateEventSettingsAction(formData: FormData) {
 export async function createEventAction(formData: FormData) {
   await requireAdmin();
   const input = createEventSchema.parse(Object.fromEntries(formData));
-  const startsAt = optionalDate(input.startsAt);
-  const entryLockAt = optionalDate(input.entryLockAt) ?? startsAt;
+  const timeZone = normalizeTimeZone(input.timeZone);
+  const startsAt = dateFromLocalDateTime(input.startsAt, timeZone);
+  const entryLockAt = dateFromLocalDateTime(input.entryLockAt, timeZone) ?? startsAt;
 
   await getPrisma().event.create({
     data: {
       name: input.name,
       slug: input.slug,
+      timeZone,
       startsAt,
       entryLockAt,
-      picksVisibleAt: optionalDate(input.picksVisibleAt),
+      picksVisibleAt: dateFromLocalDateTime(input.picksVisibleAt, timeZone),
     },
   });
 
@@ -94,18 +96,21 @@ async function createImportEvent(target: ImportTarget, fallbackName: string) {
   const input = createEventSchema.parse({
     name: target.eventName || fallbackName,
     slug: target.eventSlug,
+    timeZone: target.eventTimeZone,
     startsAt: target.eventStartsAt,
     entryLockAt: target.eventEntryLockAt,
     picksVisibleAt: target.eventPicksVisibleAt,
   });
-  const startsAt = optionalDate(input.startsAt);
+  const timeZone = normalizeTimeZone(input.timeZone);
+  const startsAt = dateFromLocalDateTime(input.startsAt, timeZone);
   return getPrisma().event.create({
     data: {
       name: input.name,
       slug: input.slug,
+      timeZone,
       startsAt,
-      entryLockAt: optionalDate(input.entryLockAt) ?? startsAt,
-      picksVisibleAt: optionalDate(input.picksVisibleAt),
+      entryLockAt: dateFromLocalDateTime(input.entryLockAt, timeZone) ?? startsAt,
+      picksVisibleAt: dateFromLocalDateTime(input.picksVisibleAt, timeZone),
     },
   });
 }

@@ -1,6 +1,7 @@
 import { ButtonLink, Card, PageShell, Pill } from "@/components/ui";
 import { SiteNav } from "@/components/site-nav";
 import { entryIsLocked, getAllEvents, picksAreVisible } from "@/lib/events";
+import { formatDateInZone, formatDateTimeInZone } from "@/lib/time-zone";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +41,8 @@ export default async function HomePage() {
                     {event.name}
                   </h2>
                   <p className="tg-body-sm tg-muted" style={{ marginTop: 6 }}>
-                    {event.startsAt ? `Starts ${formatDate(event.startsAt)}` : "Start time TBD"}
-                    {event.entryLockAt ? ` · Locks ${formatDateTime(event.entryLockAt)}` : ""}
+                    {event.startsAt ? `Starts ${formatDateInZone(event.startsAt, event.timeZone)}` : "Start time TBD"}
+                    {event.entryLockAt ? ` · Locks ${formatDateTimeInZone(event.entryLockAt, event.timeZone)}` : ""}
                   </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
                     <ButtonLink href={`/events/${event.slug}`}>Event</ButtonLink>
@@ -57,12 +58,4 @@ export default async function HomePage() {
       )}
     </PageShell>
   );
-}
-
-function formatDate(value: Date) {
-  return value.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
-function formatDateTime(value: Date) {
-  return value.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
