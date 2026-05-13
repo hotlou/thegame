@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/authz";
 import { getPrisma } from "@/lib/prisma";
-import { importDraftSchema, makeSourceGameKey } from "@/lib/usau-import";
+import { importDraftSchema, makeSourceGameKey, parseUsauScheduleHtml } from "@/lib/usau-import";
 import { bucketForSeed } from "@/lib/rules";
 import { recalculateEventScores } from "@/lib/score-service";
 import { mapTeamsByName, normalizeName } from "@/lib/result-import";
@@ -46,6 +46,12 @@ const importTargetSchema = z.object({
   divisionName: z.string().trim().optional(),
   divisionSlug: z.string().trim().optional(),
   divisionGender: divisionGenderSchema.optional(),
+});
+
+const replaceDivisionSchema = z.object({
+  eventId: z.string().min(1),
+  divisionId: z.string().min(1),
+  clearAffectedEntries: z.coerce.boolean().optional(),
 });
 
 export async function updateEventSettingsAction(formData: FormData) {
@@ -516,6 +522,177 @@ export async function applyResultsImportAction(formData: FormData) {
   revalidatePath("/");
 
   return summary;
+}
+
+export async function replaceDivisionFromSourceAction(formData: FormData) {
+  await requireAdmin();
+  const input = replaceDivisionSchema.parse(Object.fromEntries(formData));
+  const prisma = getPrisma();
+  const division = await prisma.division.findFirstOrThrow({
+    where: { id: input.divisionId, eventId: input.eventId },
+    include: {
+      event: true,
+      importSources: { where: { isActive: true }, orderBy: { createdAt: "asc" } },
+      teams: { include: { picks: true } },
+      games: { include: { team1: true, team2: true } },
+    },
+  });
+  const sourceUrl = division.importSources[0]?.sourceUrl ?? division.usauUrl;
+  if (!sourceUrl) throw new Error("This division has no active source URL.");
+
+  const response = await fetch(sourceUrl, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Could not fetch source URL: ${response.status} ${response.statusText}`);
+
+  const draft = parseUsauScheduleHtml(await response.text(), sourceUrl);
+  const draftSeeds = new Set(draft.teams.map((team) => team.seed));
+  const draftGameKeys = new Set(
+    draft.games.flatMap((game) => [
+      game.sourceGameKey,
+      makeSourceGameKey({
+        stage: game.stage,
+        pool: game.pool,
+        team1Name: game.team1Name,
+        team2Name: game.team2Name,
+        sortOrder: game.sortOrder,
+      }),
+    ]),
+  );
+  const staleTeams = division.teams.filter((team) => !draftSeeds.has(team.seed));
+  const staleTeamIds = staleTeams.map((team) => team.id);
+  const affectedEntryIds = [
+    ...new Set(staleTeams.flatMap((team) => team.picks.map((pick) => pick.entryId))),
+  ];
+
+  if (affectedEntryIds.length > 0 && !input.clearAffectedEntries) {
+    throw new Error(
+      `${affectedEntryIds.length} entr${affectedEntryIds.length === 1 ? "y has" : "ies have"} picks on teams no longer in the source. Check the clear affected entries box and try again.`,
+    );
+  }
+
+  const staleGameIds = division.games
+    .filter((game) => {
+      const fallbackKey = makeSourceGameKey({
+        stage: game.stage,
+        pool: game.pool ?? undefined,
+        team1Name: game.team1?.name,
+        team2Name: game.team2?.name,
+      });
+      return ![game.sourceGameKey, fallbackKey].some((key) => key && draftGameKeys.has(key));
+    })
+    .map((game) => game.id);
+
+  await prisma.$transaction(async (tx) => {
+    if (affectedEntryIds.length > 0) {
+      await tx.entry.deleteMany({ where: { id: { in: affectedEntryIds } } });
+    }
+    if (staleGameIds.length > 0) {
+      await tx.game.deleteMany({ where: { id: { in: staleGameIds } } });
+    }
+    if (staleTeamIds.length > 0) {
+      await tx.team.deleteMany({ where: { id: { in: staleTeamIds } } });
+    }
+
+    const teamByName = new Map<string, string>();
+    for (const team of draft.teams) {
+      const saved = await tx.team.upsert({
+        where: {
+          eventId_divisionId_seed: {
+            eventId: input.eventId,
+            divisionId: input.divisionId,
+            seed: team.seed,
+          },
+        },
+        create: {
+          eventId: input.eventId,
+          divisionId: input.divisionId,
+          name: team.name,
+          seed: team.seed,
+          bucket: team.bucket,
+          pool: team.pool,
+        },
+        update: {
+          name: team.name,
+          bucket: team.bucket,
+          pool: team.pool,
+        },
+      });
+      teamByName.set(team.name, saved.id);
+    }
+
+    const remainingGames = await tx.game.findMany({
+      where: { eventId: input.eventId, divisionId: input.divisionId },
+      include: { team1: true, team2: true },
+    });
+    const existingByKey = indexExistingGames(remainingGames);
+    for (const game of draft.games) {
+      const fallbackSourceGameKey = makeSourceGameKey({
+        stage: game.stage,
+        pool: game.pool,
+        team1Name: game.team1Name,
+        team2Name: game.team2Name,
+        sortOrder: game.sortOrder,
+      });
+      const existing = existingByKey.get(game.sourceGameKey) ?? existingByKey.get(fallbackSourceGameKey);
+      const importedData = {
+        eventId: input.eventId,
+        divisionId: input.divisionId,
+        stage: game.stage,
+        label: game.label,
+        pool: game.pool,
+        championshipPath: game.championshipPath,
+        sourceUrl: draft.sourceUrl,
+        sourceGameKey: game.sourceGameKey,
+        lastImportedAt: new Date(),
+        resultSource: "IMPORTED" as const,
+        manualOverride: false,
+        team1Id: game.team1Name ? teamByName.get(game.team1Name) : undefined,
+        team2Id: game.team2Name ? teamByName.get(game.team2Name) : undefined,
+        team1Score: game.team1Score ?? null,
+        team2Score: game.team2Score ?? null,
+        status: game.status,
+      };
+
+      if (existing) {
+        await tx.game.update({ where: { id: existing.id }, data: importedData });
+      } else {
+        await tx.game.create({ data: { ...importedData, sortOrder: game.sortOrder } });
+      }
+    }
+
+    await tx.division.update({
+      where: { id: input.divisionId },
+      data: {
+        name: draft.divisionName,
+        gender: draft.gender,
+        usauUrl: sourceUrl,
+      },
+    });
+    await tx.importSource.upsert({
+      where: { eventId_sourceUrl: { eventId: input.eventId, sourceUrl } },
+      create: {
+        eventId: input.eventId,
+        divisionId: input.divisionId,
+        provider: "USAU",
+        sourceUrl,
+        sourceTitle: draft.divisionName,
+        lastImportedAt: new Date(),
+      },
+      update: {
+        divisionId: input.divisionId,
+        sourceTitle: draft.divisionName,
+        isActive: true,
+        lastImportedAt: new Date(),
+      },
+    });
+  });
+
+  await recalculateEventScores(input.eventId);
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin/teams");
+  revalidatePath("/admin/games");
+  revalidatePath("/admin/entries");
+  revalidatePath(`/events/${division.event.slug}`);
+  revalidatePath(`/events/${division.event.slug}/leaderboard`);
 }
 
 export async function createBonusQuestionAction(formData: FormData) {

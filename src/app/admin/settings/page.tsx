@@ -1,7 +1,7 @@
 import { Card, Select, SubmitButton, TextInput } from "@/components/ui";
 import { AdminEventSwitcher } from "@/components/admin-event-switcher";
 import { getAdminEvent, getAllEvents } from "@/lib/events";
-import { createEventAction, updateEventSettingsAction } from "@/lib/admin-actions";
+import { createEventAction, replaceDivisionFromSourceAction, updateEventSettingsAction } from "@/lib/admin-actions";
 import { getPrisma } from "@/lib/prisma";
 import { formatDateTimeInZone, formatDateTimeLocalInZone, timeZoneOptions } from "@/lib/time-zone";
 
@@ -101,6 +101,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <th>Games</th>
                 <th>Sources</th>
                 <th>Last import</th>
+                <th>Replace</th>
               </tr>
             </thead>
             <tbody>
@@ -155,12 +156,32 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                         .map((date) => formatDateTimeInZone(date, event.timeZone))
                         .join(", ") || "Never"}
                     </td>
+                    <td>
+                      {sources.length === 0 ? (
+                        <span className="tg-muted">No source</span>
+                      ) : (
+                        <form action={replaceDivisionFromSourceAction} style={{ display: "grid", gap: 8 }}>
+                          <input type="hidden" name="eventId" value={event.id} />
+                          <input type="hidden" name="divisionId" value={division.id} />
+                          <label
+                            className="tg-body-sm tg-muted"
+                            style={{ display: "flex", alignItems: "center", gap: 6 }}
+                          >
+                            <input type="checkbox" name="clearAffectedEntries" value="true" />
+                            Clear affected entries
+                          </label>
+                          <button type="submit" className="tg-btn tg-btn--sm tg-btn--alt">
+                            Replace
+                          </button>
+                        </form>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
               {divisions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="tg-muted">
+                  <td colSpan={7} className="tg-muted">
                     No divisions have been imported for this event yet.
                   </td>
                 </tr>
