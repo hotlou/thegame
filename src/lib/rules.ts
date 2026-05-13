@@ -4,7 +4,7 @@ export const regularSlots = ["B1", "B2A", "B2B", "B3"] as const;
 export const allPickSlots = [...regularSlots, "BONUS"] as const;
 
 export type PickSlot = (typeof allPickSlots)[number];
-export type DivisionGender = "MENS" | "WOMENS";
+export type DivisionGender = "MENS" | "WOMENS" | "MIXED" | "OTHER";
 
 export type EntryTeam = {
   id: string;

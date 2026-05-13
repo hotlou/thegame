@@ -8,6 +8,9 @@ import { importDraftSchema, makeSourceGameKey } from "@/lib/usau-import";
 import { bucketForSeed } from "@/lib/rules";
 import { recalculateEventScores } from "@/lib/score-service";
 import { mapTeamsByName, normalizeName } from "@/lib/result-import";
+import { slugify, uniqueSlug } from "@/lib/slug";
+
+const divisionGenderSchema = z.enum(["MENS", "WOMENS", "MIXED", "OTHER"]);
 
 const eventSettingsSchema = z.object({
   eventId: z.string().min(1),
@@ -24,6 +27,21 @@ const createEventSchema = z.object({
   startsAt: z.string().optional(),
   entryLockAt: z.string().optional(),
   picksVisibleAt: z.string().optional(),
+});
+
+const importTargetSchema = z.object({
+  targetMode: z.enum(["existing", "new"]),
+  eventId: z.string().optional(),
+  eventName: z.string().trim().optional(),
+  eventSlug: z.string().trim().optional(),
+  eventStartsAt: z.string().optional(),
+  eventEntryLockAt: z.string().optional(),
+  eventPicksVisibleAt: z.string().optional(),
+  divisionMode: z.enum(["existing", "new"]),
+  divisionId: z.string().optional(),
+  divisionName: z.string().trim().optional(),
+  divisionSlug: z.string().trim().optional(),
+  divisionGender: divisionGenderSchema.optional(),
 });
 
 function optionalDate(value: string | undefined) {
@@ -55,7 +73,7 @@ export async function createEventAction(formData: FormData) {
   const startsAt = optionalDate(input.startsAt);
   const entryLockAt = optionalDate(input.entryLockAt) ?? startsAt;
 
-  const event = await getPrisma().event.create({
+  await getPrisma().event.create({
     data: {
       name: input.name,
       slug: input.slug,
@@ -70,34 +88,88 @@ export async function createEventAction(formData: FormData) {
   revalidatePath("/admin/settings");
 }
 
-export async function saveImportDraftAction(formData: FormData) {
-  await requireAdmin();
-  const eventId = String(formData.get("eventId") ?? "");
-  const rawDraft = String(formData.get("draft") ?? "");
-  const draft = importDraftSchema.parse(JSON.parse(rawDraft));
-  const prisma = getPrisma();
+type ImportTarget = z.infer<typeof importTargetSchema>;
 
-  const division = await prisma.division.upsert({
-    where: { eventId_gender: { eventId, gender: draft.gender } },
-    create: {
-      eventId,
-      name: draft.divisionName,
-      gender: draft.gender,
-      usauUrl: draft.sourceUrl,
-      sortOrder: draft.gender === "MENS" ? 1 : 2,
-    },
-    update: {
-      name: draft.divisionName,
-      usauUrl: draft.sourceUrl,
+async function createImportEvent(target: ImportTarget, fallbackName: string) {
+  const input = createEventSchema.parse({
+    name: target.eventName || fallbackName,
+    slug: target.eventSlug,
+    startsAt: target.eventStartsAt,
+    entryLockAt: target.eventEntryLockAt,
+    picksVisibleAt: target.eventPicksVisibleAt,
+  });
+  const startsAt = optionalDate(input.startsAt);
+  return getPrisma().event.create({
+    data: {
+      name: input.name,
+      slug: input.slug,
+      startsAt,
+      entryLockAt: optionalDate(input.entryLockAt) ?? startsAt,
+      picksVisibleAt: optionalDate(input.picksVisibleAt),
     },
   });
+}
+
+async function createImportDivision(eventId: string, target: ImportTarget, draft: z.infer<typeof importDraftSchema>) {
+  const prisma = getPrisma();
+  const [existingDivisions, maxSort] = await Promise.all([
+    prisma.division.findMany({ where: { eventId }, select: { slug: true } }),
+    prisma.division.aggregate({ where: { eventId }, _max: { sortOrder: true } }),
+  ]);
+  const name = target.divisionName || draft.divisionName;
+  const requestedSlug = target.divisionSlug ? slugify(target.divisionSlug) : name;
+  const slug = uniqueSlug(requestedSlug, existingDivisions.map((division) => division.slug));
+
+  return prisma.division.create({
+    data: {
+      eventId,
+      name,
+      slug,
+      gender: target.divisionGender ?? draft.gender,
+      usauUrl: draft.sourceUrl,
+      sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
+    },
+  });
+}
+
+function requireValue(value: string | undefined, message: string) {
+  if (!value) throw new Error(message);
+  return value;
+}
+
+export async function saveImportDraftAction(formData: FormData) {
+  await requireAdmin();
+  const rawDraft = String(formData.get("draft") ?? "");
+  const draft = importDraftSchema.parse(JSON.parse(rawDraft));
+  const target = importTargetSchema.parse(Object.fromEntries(formData));
+  const prisma = getPrisma();
+
+  const event =
+    target.targetMode === "new"
+      ? await createImportEvent(target, draft.divisionName)
+      : await prisma.event.findUniqueOrThrow({ where: { id: requireValue(target.eventId, "Choose an event.") } });
+  const division =
+    target.targetMode === "new" || target.divisionMode === "new"
+      ? await createImportDivision(event.id, target, draft)
+      : await prisma.division.findFirstOrThrow({
+          where: { id: requireValue(target.divisionId, "Choose a division."), eventId: event.id },
+        });
+
+  if (target.divisionMode === "existing") {
+    await prisma.division.update({
+      where: { id: division.id },
+      data: {
+        usauUrl: draft.sourceUrl,
+      },
+    });
+  }
 
   const teamByName = new Map<string, string>();
   for (const team of draft.teams) {
     const saved = await prisma.team.upsert({
-      where: { eventId_divisionId_seed: { eventId, divisionId: division.id, seed: team.seed } },
+      where: { eventId_divisionId_seed: { eventId: event.id, divisionId: division.id, seed: team.seed } },
       create: {
-        eventId,
+        eventId: event.id,
         divisionId: division.id,
         name: team.name,
         seed: team.seed,
@@ -114,14 +186,14 @@ export async function saveImportDraftAction(formData: FormData) {
   }
 
   const existingGames = await prisma.game.findMany({
-    where: { eventId, divisionId: division.id },
+    where: { eventId: event.id, divisionId: division.id },
     include: { team1: true, team2: true },
   });
   const existingByKey = indexExistingGames(existingGames);
 
   for (const game of draft.games) {
     const importedData = {
-      eventId,
+      eventId: event.id,
       divisionId: division.id,
       stage: game.stage,
       label: game.label,
@@ -163,13 +235,37 @@ export async function saveImportDraftAction(formData: FormData) {
     }
   }
 
-  await recalculateEventScores(eventId);
+  if (draft.sourceUrl) {
+    await prisma.importSource.upsert({
+      where: { eventId_sourceUrl: { eventId: event.id, sourceUrl: draft.sourceUrl } },
+      create: {
+        eventId: event.id,
+        divisionId: division.id,
+        provider: "USAU",
+        sourceUrl: draft.sourceUrl,
+        sourceTitle: draft.divisionName,
+        lastImportedAt: new Date(),
+      },
+      update: {
+        divisionId: division.id,
+        sourceTitle: draft.divisionName,
+        isActive: true,
+        lastImportedAt: new Date(),
+      },
+    });
+  }
+
+  await recalculateEventScores(event.id);
   revalidatePath("/admin/import");
   revalidatePath("/admin/teams");
   revalidatePath("/admin/games");
+  revalidatePath("/admin/settings");
+  revalidatePath(`/events/${event.slug}`);
 
   return {
     ok: true,
+    eventName: event.name,
+    eventSlug: event.slug,
     divisionName: division.name,
     teamCount: draft.teams.length,
     gameCount: draft.games.length,
@@ -381,9 +477,37 @@ export async function applyResultsImportAction(formData: FormData) {
     summary.updated += 1;
   }
 
+  if (draft.sourceUrl) {
+    const division = await prisma.division.findFirstOrThrow({ where: { id: divisionId, eventId } });
+    await Promise.all([
+      prisma.division.update({
+        where: { id: divisionId },
+        data: { usauUrl: draft.sourceUrl },
+      }),
+      prisma.importSource.upsert({
+        where: { eventId_sourceUrl: { eventId, sourceUrl: draft.sourceUrl } },
+        create: {
+          eventId,
+          divisionId,
+          provider: "USAU",
+          sourceUrl: draft.sourceUrl,
+          sourceTitle: draft.divisionName || division.name,
+          lastImportedAt: new Date(),
+        },
+        update: {
+          divisionId,
+          sourceTitle: draft.divisionName || division.name,
+          isActive: true,
+          lastImportedAt: new Date(),
+        },
+      }),
+    ]);
+  }
+
   await recalculateEventScores(eventId);
   revalidatePath("/admin/games");
   revalidatePath("/admin");
+  revalidatePath("/admin/settings");
   revalidatePath("/");
 
   return summary;

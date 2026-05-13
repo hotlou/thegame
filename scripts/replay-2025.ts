@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { parseUsauScheduleHtml, type ImportDraft } from "../src/lib/usau-import";
 import { bucketForSeed } from "../src/lib/rules";
 import { recalculateEventScores } from "../src/lib/score-service";
+import { slugify } from "../src/lib/slug";
 
 type Gender = "MENS" | "WOMENS";
 type Checkpoint = "pre" | "pool" | "prequarter" | "quarter" | "semi" | "final";
@@ -258,11 +259,23 @@ async function resetReplayEvent({ slug, drafts }: { slug: string; drafts: Import
       data: {
         eventId: event.id,
         name: draft.divisionName,
+        slug: slugify(draft.divisionName),
         gender: draft.gender,
         sortOrder: draft.gender === "MENS" ? 1 : 2,
         usauUrl: draft.sourceUrl,
       },
     });
+    if (draft.sourceUrl) {
+      await prisma.importSource.create({
+        data: {
+          eventId: event.id,
+          divisionId: division.id,
+          sourceUrl: draft.sourceUrl,
+          sourceTitle: draft.divisionName,
+          lastImportedAt: new Date(),
+        },
+      });
+    }
 
     const teamByName = new Map<string, string>();
     for (const team of draft.teams) {
@@ -397,7 +410,7 @@ async function seedReplayEntries(eventId: string, count: number, bonusQuestionId
   }
 }
 
-function bucketsFor<T extends { bucket: number; division: { gender: Gender } }>(teams: T[], gender: Gender) {
+function bucketsFor<T extends { bucket: number; division: { gender: string } }>(teams: T[], gender: Gender) {
   return {
     1: teams.filter((team) => team.division.gender === gender && team.bucket === 1),
     2: teams.filter((team) => team.division.gender === gender && team.bucket === 2),

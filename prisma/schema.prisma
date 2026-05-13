@@ -15,6 +15,8 @@ enum Role {
 enum DivisionGender {
   MENS
   WOMENS
+  MIXED
+  OTHER
 }
 
 enum GameStage {
@@ -98,6 +100,7 @@ model Event {
   isLocked        Boolean         @default(false)
   scoringComplete Boolean         @default(false)
   divisions       Division[]
+  importSources   ImportSource[]
   teams           Team[]
   games           Game[]
   entries         Entry[]
@@ -108,17 +111,37 @@ model Event {
 }
 
 model Division {
-  id        String         @id @default(cuid())
-  eventId   String
-  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  name      String
-  gender    DivisionGender
-  sortOrder Int            @default(0)
-  usauUrl   String?
-  teams     Team[]
-  games     Game[]
+  id            String         @id @default(cuid())
+  eventId       String
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name          String
+  slug          String
+  gender        DivisionGender
+  sortOrder     Int            @default(0)
+  usauUrl       String?
+  importSources ImportSource[]
+  teams         Team[]
+  games         Game[]
 
-  @@unique([eventId, gender])
+  @@unique([eventId, slug])
+}
+
+model ImportSource {
+  id             String    @id @default(cuid())
+  eventId        String
+  event          Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  divisionId     String
+  division       Division  @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  provider       String    @default("USAU")
+  sourceUrl      String
+  sourceTitle    String?
+  isActive       Boolean   @default(true)
+  lastImportedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([eventId, sourceUrl])
+  @@index([eventId, divisionId])
 }
 
 model Team {

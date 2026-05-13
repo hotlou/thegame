@@ -24,7 +24,7 @@ export default async function BonusPage({ searchParams }: { searchParams: Promis
       <AdminEventSwitcher events={events} currentSlug={event.slug} basePath="/admin/bonus" />
       <div className="tg-eyebrow">
         <h2>Bonus Props</h2>
-        <span className="meta">{questions.length} questions</span>
+        <span className="meta">{event.name} · {questions.length} questions</span>
       </div>
 
       <div
@@ -33,6 +33,9 @@ export default async function BonusPage({ searchParams }: { searchParams: Promis
       >
         <Card>
           <h1 className="tg-h2">Add bonus prop</h1>
+          <p className="tg-body-sm tg-muted" style={{ marginTop: 8 }}>
+            This prompt will appear only on entries for <strong>{event.name}</strong>.
+          </p>
           <form action={createBonusQuestionAction} style={{ display: "grid", gap: 12, marginTop: 16 }}>
             <input type="hidden" name="eventId" value={event.id} />
             <label className="tg-label">

@@ -63,13 +63,13 @@ async function main() {
   });
 
   const men = await prisma.division.upsert({
-    where: { eventId_gender: { eventId: event.id, gender: "MENS" } },
-    create: { eventId: event.id, name: "College Men", gender: "MENS", sortOrder: 1 },
+    where: { eventId_slug: { eventId: event.id, slug: "college-men" } },
+    create: { eventId: event.id, name: "College Men", slug: "college-men", gender: "MENS", sortOrder: 1 },
     update: {},
   });
   const women = await prisma.division.upsert({
-    where: { eventId_gender: { eventId: event.id, gender: "WOMENS" } },
-    create: { eventId: event.id, name: "College Women", gender: "WOMENS", sortOrder: 2 },
+    where: { eventId_slug: { eventId: event.id, slug: "college-women" } },
+    create: { eventId: event.id, name: "College Women", slug: "college-women", gender: "WOMENS", sortOrder: 2 },
     update: {},
   });
 

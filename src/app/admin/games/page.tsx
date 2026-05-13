@@ -22,6 +22,7 @@ export default async function GamesPage({ searchParams }: { searchParams: Promis
   });
   const divisions = await getPrisma().division.findMany({
     where: { eventId: event.id },
+    include: { importSources: { where: { isActive: true }, orderBy: { createdAt: "asc" } } },
     orderBy: { sortOrder: "asc" },
   });
   const teams = await getPrisma().team.findMany({
@@ -46,7 +47,20 @@ export default async function GamesPage({ searchParams }: { searchParams: Promis
             overwrite them.
           </p>
           <div style={{ marginTop: 16 }}>
-            <ResultsImportTool eventId={event.id} divisions={divisions} />
+            <ResultsImportTool
+              eventId={event.id}
+              divisions={divisions.map((division) => ({
+                id: division.id,
+                name: division.name,
+                usauUrl: division.usauUrl,
+                sourceUrls: [
+                  ...new Set([
+                    ...division.importSources.map((source) => source.sourceUrl),
+                    ...(division.usauUrl ? [division.usauUrl] : []),
+                  ]),
+                ],
+              }))}
+            />
           </div>
         </Card>
 

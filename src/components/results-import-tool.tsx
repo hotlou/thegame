@@ -9,6 +9,7 @@ type Division = {
   id: string;
   name: string;
   usauUrl: string | null;
+  sourceUrls?: string[];
 };
 
 type PreviewPayload = {
@@ -36,7 +37,7 @@ const initialApplyState: ApplyState = { ok: false };
 
 export function ResultsImportTool({ eventId, divisions }: { eventId: string; divisions: Division[] }) {
   const [urls, setUrls] = useState<Record<string, string>>(
-    Object.fromEntries(divisions.map((division) => [division.id, division.usauUrl ?? ""])),
+    Object.fromEntries(divisions.map((division) => [division.id, division.sourceUrls?.[0] ?? division.usauUrl ?? ""])),
   );
   const [selectedDivisionId, setSelectedDivisionId] = useState(divisions[0]?.id ?? "");
   const [payload, setPayload] = useState<PreviewPayload | null>(null);
@@ -99,15 +100,33 @@ export function ResultsImportTool({ eventId, divisions }: { eventId: string; div
         </label>
         <label className="tg-label">
           USAU results URL
-          <TextInput
-            value={selectedUrl}
-            onChange={(event) => {
-              setUrls((current) => ({ ...current, [selectedDivisionId]: event.target.value }));
-              setPayload(null);
-            }}
-            placeholder="https://play.usaultimate.org/..."
-            style={{ marginTop: 6 }}
-          />
+          {selectedDivision?.sourceUrls?.length ? (
+            <select
+              value={selectedUrl}
+              onChange={(event) => {
+                setUrls((current) => ({ ...current, [selectedDivisionId]: event.target.value }));
+                setPayload(null);
+              }}
+              className="tg-input tg-select"
+              style={{ marginTop: 6 }}
+            >
+              {selectedDivision.sourceUrls.map((sourceUrl) => (
+                <option key={sourceUrl} value={sourceUrl}>
+                  {sourceUrl}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <TextInput
+              value={selectedUrl}
+              onChange={(event) => {
+                setUrls((current) => ({ ...current, [selectedDivisionId]: event.target.value }));
+                setPayload(null);
+              }}
+              placeholder="https://play.usaultimate.org/..."
+              style={{ marginTop: 6 }}
+            />
+          )}
         </label>
         <div style={{ display: "flex", alignItems: "flex-end" }}>
           <button

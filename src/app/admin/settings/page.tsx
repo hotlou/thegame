@@ -2,6 +2,7 @@ import { Card, SubmitButton, TextInput } from "@/components/ui";
 import { AdminEventSwitcher } from "@/components/admin-event-switcher";
 import { getAdminEvent, getAllEvents } from "@/lib/events";
 import { createEventAction, updateEventSettingsAction } from "@/lib/admin-actions";
+import { getPrisma } from "@/lib/prisma";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
   const [{ event: eventSlug }, events] = await Promise.all([searchParams, getAllEvents()]);
@@ -10,13 +11,21 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     return (
       <CreateEventCard />
     );
+  const divisions = await getPrisma().division.findMany({
+    where: { eventId: event.id },
+    include: {
+      _count: { select: { teams: true, games: true } },
+      importSources: { orderBy: [{ isActive: "desc" }, { createdAt: "asc" }] },
+    },
+    orderBy: { sortOrder: "asc" },
+  });
 
   return (
     <>
       <AdminEventSwitcher events={events} currentSlug={event.slug} basePath="/admin/settings" />
       <div className="tg-eyebrow">
         <h2>Event Settings</h2>
-        <span className="meta">{event.slug}</span>
+        <span className="meta">{event.name}</span>
       </div>
       <div className="tg-grid tg-grid--2" style={{ alignItems: "start" }}>
         <Card>
@@ -60,6 +69,89 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </Card>
         <CreateEventCard />
       </div>
+      <Card style={{ marginTop: 20 }}>
+        <h1 className="tg-h2">Divisions and import sources</h1>
+        <p className="tg-body-sm tg-muted" style={{ marginTop: 8 }}>
+          These are the USAU URLs currently tied to this event. Result imports should use these division targets.
+        </p>
+        <div style={{ marginTop: 16, overflowX: "auto" }}>
+          <table className="tg-table" style={{ minWidth: 860 }}>
+            <thead>
+              <tr>
+                <th>Division</th>
+                <th>Category</th>
+                <th>Teams</th>
+                <th>Games</th>
+                <th>Sources</th>
+                <th>Last import</th>
+              </tr>
+            </thead>
+            <tbody>
+              {divisions.map((division) => {
+                const sources = division.importSources.length
+                  ? division.importSources
+                  : division.usauUrl
+                    ? [
+                        {
+                          id: `legacy-${division.id}`,
+                          sourceUrl: division.usauUrl,
+                          sourceTitle: division.name,
+                          provider: "USAU",
+                          isActive: true,
+                          lastImportedAt: null,
+                        },
+                      ]
+                    : [];
+                return (
+                  <tr key={division.id}>
+                    <td>
+                      <strong>{division.name}</strong>
+                      <div className="tg-body-sm tg-muted">{division.slug}</div>
+                    </td>
+                    <td>{division.gender}</td>
+                    <td>{division._count.teams}</td>
+                    <td>{division._count.games}</td>
+                    <td>
+                      {sources.length === 0 ? (
+                        <span className="tg-muted">No source URL</span>
+                      ) : (
+                        <div style={{ display: "grid", gap: 6 }}>
+                          {sources.map((source) => (
+                            <a
+                              key={source.id}
+                              className="tg-inline-link"
+                              href={source.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ fontFamily: "var(--font-mono)", overflowWrap: "anywhere" }}
+                            >
+                              {source.sourceUrl}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      {sources
+                        .map((source) => source.lastImportedAt)
+                        .filter(Boolean)
+                        .map((date) => formatDateTime(date))
+                        .join(", ") || "Never"}
+                    </td>
+                  </tr>
+                );
+              })}
+              {divisions.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="tg-muted">
+                    No divisions have been imported for this event yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </>
   );
 }
@@ -103,4 +195,9 @@ function CreateEventCard() {
 function toDateTimeLocal(date: Date | null) {
   if (!date) return "";
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function formatDateTime(date: Date | null) {
+  if (!date) return "";
+  return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }

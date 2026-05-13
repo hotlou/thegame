@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { ButtonLink, Card, PageShell, Pill } from "@/components/ui";
 import { SiteNav } from "@/components/site-nav";
 import { entryIsLocked, getAllEvents, picksAreVisible } from "@/lib/events";
@@ -7,7 +6,6 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const events = await getAllEvents();
-  if (events.length === 1) redirect(`/events/${events[0].slug}`);
 
   return (
     <PageShell>

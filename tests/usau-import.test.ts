@@ -37,4 +37,14 @@ describe("USAU import parser", () => {
       championshipPath: false,
     });
   });
+
+  it("recognizes mixed divisions when the source title says mixed", () => {
+    const draft = parseUsauScheduleHtml(
+      "<html><body><h1>Masters Mixed Championship</h1></body></html>",
+      "https://play.usaultimate.org/events/example/schedule/Mixed/Masters-Mixed/",
+    );
+
+    expect(draft.gender).toBe("MIXED");
+    expect(draft.divisionName).toBe("Masters Mixed Championship");
+  });
 });

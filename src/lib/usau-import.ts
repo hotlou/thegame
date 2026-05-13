@@ -4,7 +4,7 @@ import { bucketForSeed } from "@/lib/rules";
 
 export const importDraftSchema = z.object({
   divisionName: z.string().min(1),
-  gender: z.enum(["MENS", "WOMENS"]),
+  gender: z.enum(["MENS", "WOMENS", "MIXED", "OTHER"]),
   sourceUrl: z.string().url().optional(),
   teams: z.array(
     z.object({
@@ -39,7 +39,8 @@ function cleanText(text: string) {
   return text.replace(/\s+/g, " ").trim();
 }
 
-function inferGender(text: string): "MENS" | "WOMENS" {
+function inferGender(text: string): "MENS" | "WOMENS" | "MIXED" | "OTHER" {
+  if (/\b(mixed|mix)\b/i.test(text)) return "MIXED";
   return /\b(women|women's|womens)\b/i.test(text) ? "WOMENS" : "MENS";
 }
 
