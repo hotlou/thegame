@@ -2,21 +2,21 @@
 ALTER TYPE "DivisionGender" ADD VALUE IF NOT EXISTS 'MIXED';
 ALTER TYPE "DivisionGender" ADD VALUE IF NOT EXISTS 'OTHER';
 
-ALTER TABLE "Division" ADD COLUMN "slug" TEXT;
+ALTER TABLE "Division" ADD COLUMN IF NOT EXISTS "slug" TEXT;
 
 UPDATE "Division"
 SET "slug" = lower(regexp_replace(regexp_replace(trim("name"), '[^a-zA-Z0-9]+', '-', 'g'), '(^-|-$)', '', 'g'));
 
 UPDATE "Division"
-SET "slug" = lower("gender")
+SET "slug" = lower("gender"::text)
 WHERE "slug" IS NULL OR "slug" = '';
 
 ALTER TABLE "Division" ALTER COLUMN "slug" SET NOT NULL;
 
 DROP INDEX IF EXISTS "Division_eventId_gender_key";
-CREATE UNIQUE INDEX "Division_eventId_slug_key" ON "Division"("eventId", "slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "Division_eventId_slug_key" ON "Division"("eventId", "slug");
 
-CREATE TABLE "ImportSource" (
+CREATE TABLE IF NOT EXISTS "ImportSource" (
     "id" TEXT NOT NULL,
     "eventId" TEXT NOT NULL,
     "divisionId" TEXT NOT NULL,
@@ -57,8 +57,23 @@ FROM "Division"
 WHERE "usauUrl" IS NOT NULL AND "usauUrl" <> ''
 ON CONFLICT DO NOTHING;
 
-CREATE UNIQUE INDEX "ImportSource_eventId_sourceUrl_key" ON "ImportSource"("eventId", "sourceUrl");
-CREATE INDEX "ImportSource_eventId_divisionId_idx" ON "ImportSource"("eventId", "divisionId");
+CREATE UNIQUE INDEX IF NOT EXISTS "ImportSource_eventId_sourceUrl_key" ON "ImportSource"("eventId", "sourceUrl");
+CREATE INDEX IF NOT EXISTS "ImportSource_eventId_divisionId_idx" ON "ImportSource"("eventId", "divisionId");
 
-ALTER TABLE "ImportSource" ADD CONSTRAINT "ImportSource_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ImportSource" ADD CONSTRAINT "ImportSource_divisionId_fkey" FOREIGN KEY ("divisionId") REFERENCES "Division"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'ImportSource_eventId_fkey'
+  ) THEN
+    ALTER TABLE "ImportSource" ADD CONSTRAINT "ImportSource_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'ImportSource_divisionId_fkey'
+  ) THEN
+    ALTER TABLE "ImportSource" ADD CONSTRAINT "ImportSource_divisionId_fkey" FOREIGN KEY ("divisionId") REFERENCES "Division"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
