@@ -65,7 +65,7 @@ export function renderTheGameOg({
             borderBottomColor: "#d7d0c2",
           }}
         >
-          <span>tips@thegame.ultiworld.com</span>
+          <span>Contact TheGame</span>
           <span>thegame.ultiworld.com</span>
         </div>
 

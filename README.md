@@ -15,7 +15,7 @@ The default seed creates a College D-I 2026 event and a small set of sample team
 
 When using a shared Neon database, keep TheGame isolated in its own Postgres schema by adding `schema=thegame` to `DATABASE_URL`. For example, if Neon gives you a URL with existing query params, append `&schema=thegame`; otherwise append `?schema=thegame`.
 
-Vercel dashboard values should be entered without shell-style outer quotes. Use `ADMIN_EMAILS=hotlou@gmail.com,ob@unbenchable.com` and `AUTH_EMAIL_FROM=The Game via Unbenchable <ob@unbenchable.com>`.
+Vercel dashboard values should be entered without shell-style outer quotes. Use `ADMIN_EMAILS=hotlou@gmail.com,ob@unbenchable.com`, `AUTH_EMAIL_FROM=The Game via Unbenchable <ob@unbenchable.com>`, and `CONTACT_EMAIL=ob@unbenchable.com`.
 
 ## Scripts
 

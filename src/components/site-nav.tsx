@@ -12,10 +12,10 @@ export async function SiteNav({ eventSlug }: { eventSlug?: string } = {}) {
     <>
       <div className="tg-masthead-top">
         <span>
-          <a href="mailto:tips@thegame.ultiworld.com">News, tips &amp; rumors: tips@thegame.ultiworld.com</a>
+          <Link href="/contact">Contact</Link>
         </span>
         <span>
-          <a href="/about">About</a>
+          <Link href="/about">About</Link>
           <a href="https://discord.gg/ultiworld" target="_blank" rel="noreferrer">
             Discord
           </a>
